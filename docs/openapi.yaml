@@ -261,6 +261,32 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /api/v1/events/{eventId}/totalAttendees:
+    get:
+      tags: [Unregistered, Registered, Events]
+      operationId: getEventTotalAttendees
+      summary: Get the total number of attendees for an event. Results vary depending on whether the event is public or private.
+      security: # TODO: Should use token optionally
+      parameters:
+        - name: archived # TODO: possibly remove this, rethink how archived events are accessed
+          in: query
+          description: Whether to search archived events in the count.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '200':
+          description: The total number of attendees
+          content:
+            application/json:
+              schema:
+                type: integer
+                example: 12345
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/v1/locations:
     get:
       tags: [Locations]

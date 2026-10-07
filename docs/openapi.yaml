@@ -49,6 +49,7 @@ paths:
       tags: [Events, Unregistered]
       operationId: listPublicEvents
       summary: List of currently active, public, events (paginated)
+      security: []
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -101,6 +102,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/events/{eventId}:
     parameters:
@@ -109,6 +112,7 @@ paths:
       tags: [Events, Unregistered]
       operationId: getEvent
       summary: Get one active event (public)
+      security: []
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
@@ -147,10 +151,12 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Event, Manager]
+      tags: [Events, Manager]
       operationId: updateEvent
       summary: Change some fields of an event
       requestBody:
@@ -172,6 +178,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
@@ -187,8 +195,71 @@ paths:
           description: Deleted. No body.
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /api/v1/events/{eventId}/invites:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [Invites, Manager, Admin]
+      operationId: listEventInvites
+      summary: List invites for an event (manager or admin)
+      description: Lists all invitations associated with the event. Requires MANAGER or ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '200':
+          description: The invites to the specified event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+    post:
+      tags: [Invites, Manager, Admin]
+      operationId: createEventInvite
+      summary: Invite a user to an event (manager or admin)
+      description: Creates an invitation for a user. Requires MANAGER or ADMIN.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteCreate'
+      responses:
+        '201':
+          description: Invitation created
+          headers:
+            Location:
+              description: URL of the new invitation
+              schema:
+                type: string
+                example: /api/v1/invites/18
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /api/v1/locations:
     get:
@@ -231,6 +302,59 @@ paths:
           description: Deleted. The token is now useless.
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/users/me/invites:
+    get:
+      tags: [ Users, Invites ]
+      operationId: listMyInvites
+      summary: Get invites to events I'm invited to
+      description: Returns invitations addressed to the authenticated user.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '200':
+          description: The authenticated user's invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/users/me/invites/{inviteId}:
+    parameters:
+      - $ref: '#/components/parameters/InviteId'
+    patch:
+      tags: [ Users, Invites, Registered ]
+      operationId: respondToMyInvite
+      summary: Accept or decline my invitation
+      description: The authenticated user may accept or decline an invitation addressed to them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteResponsePatch'
+      responses:
+        '200':
+          description: The updated invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /api/v1/users:
     get:
@@ -332,6 +456,119 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/v1/users/{userId}/invites:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [Invites, Admin]
+      operationId: listUserInvites
+      summary: List a user's invites (admin only)
+      description: Lists invitations addressed to the specified user. Requires ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: The user's invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/invites:
+    get:
+      tags: [Invites, Admin]
+      operationId: listAllInvites
+      summary: List all invites (admin only)
+      description: Lists invitations across all users and events. Requires ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: All invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/invites/{inviteId}:
+    parameters:
+      - $ref: '#/components/parameters/InviteId'
+    get:
+      tags: [Invites, Admin]
+      operationId: getInvite
+      summary: Get an invite (admin only)
+      description: Requires ADMIN.
+      responses:
+        '200':
+          description: The invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Invites, Admin]
+      operationId: updateInvite
+      summary: Update an invite (admin only)
+      description: Allows an administrator to change an invitation's status or message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteAdminPatch'
+      responses:
+        '200':
+          description: The updated invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Invites, Admin]
+      operationId: deleteInvite
+      summary: Delete an invite (admin only)
+      description: Requires ADMIN.
+      responses:
+        '204':
+          description: Invitation deleted. No body.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
 components:
   securitySchemes:
     bearerAuth:
@@ -349,6 +586,22 @@ components:
         type: integer
         format: int64
         example: 42
+    InviteId:
+      name: inviteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 18
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 7
     Page:
       name: page
       in: query
@@ -370,7 +623,7 @@ components:
   schemas:
     Event:
       type: object
-      required: [eventId, eventName, eventDescription, startsOn, creatorId, updatedAt]
+      required: [ eventId, eventName, eventDescription, startsOn, creatorId, updatedAt ]
       properties:
         eventId:
           type: integer
@@ -388,7 +641,8 @@ components:
           example: Lots of bashing and side activities.
           description: The description of the event.
         startsOn:
-          $ref: '#/components/schemas/Date-Time'
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the event's start.
         creatorId:
           type: integer
@@ -396,7 +650,8 @@ components:
           example: 7
           description: The user who created the event, refernced by internal DB id.
         updatedAt:
-          $ref: '#/components/schemas/Date-Time'
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the last edit to the event.
 
     EventCreate:
@@ -420,7 +675,8 @@ components:
           example: Lots of bashing and side activities.
           description: The description of the event.
         startsOn:
-          $ref: '#/components/schemas/Date-Time'
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the event's start.
         creatorId:
           type: integer
@@ -443,7 +699,8 @@ components:
           example: Lots of bashing and side activities.
           description: The description of the event.
         startsOn:
-          $ref: '#/components/schemas/Date-Time'
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the event's start.
         creatorId:
           type: integer
@@ -453,7 +710,7 @@ components:
 
     Location:
       type: object
-      required: [locationId, locationName, address, locationDesc, updatedAt]
+      required: [ locationId, locationName, address, updatedAt ]
       properties:
         locationId:
           type: integer
@@ -469,12 +726,13 @@ components:
         locationDesc:
           type: string
         updatedAt:
-          $ref: '#/components/schemas/Date-Time'
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the last edit to the location.
 
     Invite:
       type: object
-      required: [userId, eventId, message, accepted, invitedAt]
+      required: [ userId, eventId, status, invitedAt ]
       properties:
         userId:
           type: integer
@@ -484,19 +742,63 @@ components:
           type: integer
           format: int64
           example: 7
+        status:
+          $ref: '#/components/schemas/InviteStatus'
         message:
           type: string
-        accepted:
-          type: boolean
+          maxLength: 1000
         invitedAt:
-          $ref: '#/components/schemas/Date-Time'
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
           description: The date and time of when the invite was sent.
+        respondedAt:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          readOnly: true
+          nullable: true
+          description: The date and time when the invite was accepted or declined.
+
+    InviteCreate:
+      type: object
+      required: [ userId ]
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 7
+          description: The user being invited. The event is taken from the path.
+        message:
+          type: string
+          maxLength: 1000
+
+    InviteResponsePatch:
+      type: object
+      required: [ status ]
+      properties:
+        status:
+          type: string
+          enum: [ ACCEPTED, DECLINED ]
+
+    InviteAdminPatch:
+      type: object
+      minProperties: 1
+      properties:
+        status:
+          $ref: '#/components/schemas/InviteStatus'
+        message:
+          type: string
+          maxLength: 1000
+
+    InviteStatus:
+      type: string
+      enum: [ PENDING, ACCEPTED, DECLINED, REVOKED ]
+
     PageMeta:
       description: >-
         Spring Data's PagedModel shape. Turn it on with
         spring.data.web.pageable.serialization-mode=via_dto in application.properties.
       type: object
-      required: [size, number, totalElements, totalPages]
+      required: [ size, number, totalElements, totalPages ]
       properties:
         size:
           type: integer
@@ -514,7 +816,7 @@ components:
 
     EventPage:
       type: object
-      required: [content, page]
+      required: [ content, page ]
       properties:
         content:
           type: array
@@ -525,7 +827,7 @@ components:
 
     LocationPage:
       type: object
-      required: [content, page]
+      required: [ content, page ]
       properties:
         content:
           type: array
@@ -534,9 +836,20 @@ components:
         page:
           $ref: '#/components/schemas/PageMeta'
 
+    InvitePage:
+      type: object
+      required: [ content, page ]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invite'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
     User:
       type: object
-      required: [userId, username, password, role, createdAt]
+      required: [ userId, username, role, createdAt ]
       properties:
         userId:
           type: integer
@@ -551,18 +864,25 @@ components:
           maxLength: 100
         role:
           $ref: '#/components/schemas/Role'
+        createdAt:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time when a user's account was created.
 
     Role:
       type: string
-      enum: [USER, MANAGER, ADMIN]
-      
+      enum: [ USER, MANAGER, ADMIN ]
+
     Date-Time:
-      
+      type: string
+      format: date-time
+      example: 2022-01-01T00:00:00.000Z
+
 
     UserPatch:
-      description: Body for PATCH /api/v1/users/{userId}. Today the only editable field is the role.
+      description: Body for PATCH /api/v1/users/{userId}.
       type: object
-      required: []
+      minProperties: 1
       properties:
         userId:
           type: integer
@@ -583,7 +903,7 @@ components:
 
     UserPage:
       type: object
-      required: [content, page]
+      required: [ content, page ]
       properties:
         content:
           type: array
@@ -595,7 +915,7 @@ components:
     Problem:
       description: RFC 9457 Problem Details. The ONE error body every endpoint returns.
       type: object
-      required: [title, status]
+      required: [ title, status ]
       properties:
         type:
           type: string
@@ -661,3 +981,12 @@ components:
           example:
             title: Internal Server Error
             status: 500
+    Conflict:
+      description: The invite conflicts with the current resource state, such as an existing invite.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            title: Conflict
+            status: 409

@@ -48,3 +48,4 @@ Table locations as l {
 
 Ref user_posts: l.user_id > u.user_id
 Ref: u.user_id < e.creator_user_id
+

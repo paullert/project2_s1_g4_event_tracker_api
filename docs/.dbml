@@ -1,21 +1,44 @@
 // Use DBML to define your database structure
 // Docs: https://dbml.dbdiagram.io/docs
 
-Table events {
-  creator_user_id integer [not null]
-  rsvp_user_id integer [not null]
+Table events as e {
+  creator_user_id integer [ref: - u.user_id]
+  event_id integer
+  event_name varchar
+  event_desc varchar
   created_at timestamp
+  starts_on timestamp
+  current_events integer [primary key, ref: > e.event_id] // Many references to an event can exist
 }
 
-Table users {
-  id integer [primary key]
+Table users as u {
+  user_id integer [primary key]
   username varchar
   role varchar
   created_at timestamp
 }
 
-Table locations {
-  id integer [primary key]
+Table manager_event as m_e {
+    event_id integer [primary key, ref: > e.event_id] // Many references to an event can exist
+    manager_id integer [primary key, ref: > u.user_id] // Many references to an user can exist
+}
+
+Table archived_events as a_e {
+  arc_event_name varchar
+  arc_event_date varchar
+  arc_event_size integer //final number of attendees
+}
+
+Table invites as i {
+    event_id integer [primary key, ref: > e.event_id] // Many references to an event can exist
+    inv_user_id integer [primary key, ref: > u.user_id] // Many references to an user can exist
+    response bool //3 options: Undefined, Accepted, Declined
+    message text
+    dateSent datetime
+}
+
+Table locations as l {
+  location_id integer [primary key]
   location_name varchar
   address varchar
   desc text [note: 'Content of the post']
@@ -23,6 +46,5 @@ Table locations {
   created_at timestamp
 }
 
-Ref user_posts: locations.user_id > users.id
-Ref: users.id < events.rsvp_user_id
-Ref: users.id < events.creator_user_id
+Ref user_posts: l.user_id > u.user_id
+Ref: u.user_id < e.creator_user_id

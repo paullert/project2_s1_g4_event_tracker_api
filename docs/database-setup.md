@@ -14,10 +14,9 @@ Our API uses a PostgreSQL database hosted by Neon.
 2. Select the `production` branch, `neondb` database, and `neondb_owner` role.
 3. Copy the connection string.
 4. Create a `.env` file in the project root, next to `build.gradle.kts`.
-5. Split the connection information into these values:
 
 ```env
 DATABASE_URL=
-DATABASE_USERNAME=
-DATABASE_PASSWORD=
 ```
+
+5. Paste connection string into DATABASE_URL variable. 

@@ -71,7 +71,7 @@ Table locations as l {
 }
 
 Ref: e.creator_user_id > u.user_id [color: #ff0000]
-Ref: e.location_id > l.location_id [color: #ff0000]
+Ref: e.event_loc > l.location_id [color: #ff0000]
 Ref: m_e.event_id > e.event_id [color: #ff0000]
 Ref: m_e.manager_id > u.user_id [color: #ff0000]
 Ref: i.event_id > e.event_id [color: #ff0000]

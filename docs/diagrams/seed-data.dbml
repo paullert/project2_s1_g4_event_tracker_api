@@ -1,6 +1,4 @@
-records users (user_id, username, role) {
-
-}
+// NOTE: This file needs to be used in conjunction with schema.dbml
 
 records users (user_id, username, role, created_at, updated_at) {
     0, 'system','ADMIN', 'now()', 'now()'

@@ -3,7 +3,6 @@ name: Convert DBML to SQL
 on:
   push:
     paths:
-      - 'docs/diagrams/database.dbml'
       - 'docs/diagrams/schema.dbml'
       - 'docs/diagrams/seed-data.dbml'
   workflow_dispatch:
@@ -33,8 +32,17 @@ jobs:
 
       - name: Convert DBML to SQL
         run: |
+          combined_dbml="$(mktemp --suffix=.dbml)"
+          trap 'rm -f "$combined_dbml"' EXIT
+
+          {
+            cat docs/diagrams/schema.dbml
+            printf '\n\n'
+            cat docs/diagrams/seed-data.dbml
+          } > "$combined_dbml"
+
           npx --yes --package @dbml/cli dbml2sql \
-            docs/diagrams/database.dbml \
+            "$combined_dbml" \
             --postgres \
             --out-file docs/sql/database.sql
 

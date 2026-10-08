@@ -1,0 +1,56 @@
+name: Convert DBML to SQL
+
+on:
+  push:
+    paths:
+      - 'docs/diagrams/**/*.dbml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate-sql:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create output directory
+        run: mkdir -p docs/sql
+
+      - name: Show DBML around failing line
+        run: |
+          nl -ba docs/diagrams/schema.dbml | sed -n '22,30p'
+
+      - name: Convert DBML to SQL
+        run: |
+          npx --yes --package @dbml/cli dbml2sql \
+            docs/diagrams/seed-data.dbml \
+            --postgres \
+            --out-file docs/sql/seed-data.sql
+
+          npx --yes --package @dbml/cli dbml2sql \
+            docs/diagrams/schema.dbml \
+            --postgres \
+            --out-file docs/sql/schema.sql
+
+      - name: Commit and push generated SQL
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add docs/sql/*.sql
+
+          if git diff --cached --quiet; then
+            echo "No SQL changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Auto-update database SQL files"
+          git push

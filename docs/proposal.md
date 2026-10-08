@@ -20,7 +20,7 @@ because users would only have information stored that they need access to rather
 (Role table is for backend confirmation, if someone has permissions to do something based on what role they have)
 
 ## 3. ER sketch
-Tables, primary and foreign keys, and cardinality. Edits to [.dbml](.dbml) automatically get rendered here through a workflow.
+Tables, primary and foreign keys, and cardinality. Edits to [schema.dbml](schema.dbml) automatically get rendered here through a GitHub workflow.
 
 ![ER Diagram of Event Scheduling Database](diagrams/schema.svg)
 

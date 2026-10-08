@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'docs/diagrams/database.dbml'
+      - 'docs/diagrams/schema.dbml'
+      - 'docs/diagrams/seed-data.dbml'
+  workflow_dispatch:
 
 permissions:
   contents: write

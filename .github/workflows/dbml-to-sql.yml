@@ -3,7 +3,7 @@ name: Convert DBML to SQL
 on:
   push:
     paths:
-      - 'docs/diagrams/**/*.dbml'
+      - 'docs/diagrams/database.dbml'
 
 permissions:
   contents: write
@@ -26,26 +26,26 @@ jobs:
 
       - name: Show DBML around failing line
         run: |
-          nl -ba docs/diagrams/schema.dbml | sed -n '22,30p'
+          nl -ba docs/diagrams/database.dbml | sed -n '22,30p'
 
       - name: Convert DBML to SQL
         run: |
           npx --yes --package @dbml/cli dbml2sql \
-            docs/diagrams/seed-data.dbml \
+            docs/diagrams/database.dbml \
             --postgres \
-            --out-file docs/sql/seed-data.sql
+            --out-file docs/sql/database.sql
 
-          npx --yes --package @dbml/cli dbml2sql \
-            docs/diagrams/schema.dbml \
-            --postgres \
-            --out-file docs/sql/schema.sql
+      - name: Verify SQL output
+        run: |
+          ls -la docs/sql
+          test -s docs/sql/database.sql
 
       - name: Commit and push generated SQL
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add docs/sql/*.sql
+          git add -A docs/sql/
 
           if git diff --cached --quiet; then
             echo "No SQL changes to commit."

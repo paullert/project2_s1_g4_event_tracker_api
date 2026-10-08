@@ -1,4 +1,5 @@
 // Used to generate full sql file containing schema and seed data
+// Uses Dbml modules to load data into 1 file for compilation
 
 Project event_tracker_api {
   database_type: 'PostgreSQL'

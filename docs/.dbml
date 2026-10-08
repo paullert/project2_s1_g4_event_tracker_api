@@ -15,7 +15,7 @@ Enum invite_response {
 
 Table events as e {
   event_id integer [primary key, increment]
-  event_name varchar [not null]
+  event_name varchar(255) [not null]
   event_desc text [not null] //description
   event_loc integer [not null, ref: > l.location_id] //location
   created_at timestamp
@@ -25,9 +25,9 @@ Table events as e {
 
 Table users as u {
   user_id integer [primary key, increment]
-  username varchar [not null, unique]
-  user_role varchar [not null, default: `now()`]
-  created_at timestamp [not null]
+  username varchar(255) [not null, unique]
+  user_role user_role [not null, default: `user`]
+  created_at timestamp [default: `now()`]
 }
 
 Table manager_event as m_e {
@@ -41,11 +41,11 @@ Table manager_event as m_e {
 
 Table archived_events as a_e {
   arc_event_id integer [primary key]
-  arc_event_name varchar
+  arc_event_name varchar(255)
   arc_event_date timestamp
   arc_event_size integer //final number of attendees
-  arc_event_desc varchar //description
-  arc_event_loc varchar //location
+  arc_event_desc varchar(255) //description
+  arc_event_loc varchar(255) //location
   happened_on timestamp
 }
 
@@ -63,8 +63,8 @@ Table invites as i {
 
 Table locations as l {
   location_id integer [primary key]
-  location_name varchar
-  address varchar
+  location_name varchar(255)
+  address varchar(255)
   desc text [note: 'Content of the post']
   user_id integer [not null]
   created_at timestamp

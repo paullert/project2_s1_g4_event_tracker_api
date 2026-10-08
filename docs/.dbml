@@ -1,28 +1,79 @@
 // Use DBML to define your database structure
 // Docs: https://dbml.dbdiagram.io/docs
 
-Table events {
-  creator_user_id integer [not null]
-  rsvp_user_id integer [not null]
-  created_at timestamp
+Enum user_role {
+  user
+  manager
+  admin
 }
 
-Table users {
-  id integer [primary key]
-  username varchar
-  role varchar
-  created_at timestamp
+Enum invite_response {
+  undefined
+  accepted
+  declined
 }
 
-Table locations {
-  id integer [primary key]
-  location_name varchar
-  address varchar
+Table events as e {
+  event_id integer [primary key, increment]
+  event_name varchar(255) [not null]
+  event_desc text [not null] //description
+  event_loc integer [not null, ref: > l.location_id] //location
+  created_at timestamp
+  starts_on timestamp
+  creator_user_id integer [ref: > u.user_id] //foreign key
+}
+
+Table users as u {
+  user_id integer [primary key, increment]
+  username varchar(255) [not null, unique]
+  user_role user_role [not null, default: `user`]
+  created_at timestamp [default: `now()`]
+}
+
+Table manager_event as m_e {
+    event_id integer [not null, primary key, ref: > e.event_id] // Many references to an event can exist
+    manager_id integer [not null, primary key, ref: > u.user_id] // Many references to an user can exist
+
+     indexes {
+     (event_id, manager_id) [primary key]
+   }
+}
+
+Table archived_events as a_e {
+  arc_event_id integer [primary key]
+  arc_event_name varchar(255)
+  arc_event_date timestamp
+  arc_event_size integer //final number of attendees
+  arc_event_desc varchar(255) //description
+  arc_event_loc varchar(255) //location
+  happened_on timestamp
+}
+
+Table invites as i {
+    event_id integer [not null, primary key, ref: > e.event_id] // Many references to an event can exist
+    inv_user_id integer [not null, primary key, ref: > u.user_id] // Many references to an user can exist
+    response invite_response [not null, default: 'undefined']
+    message text
+    sent_at timestamp [not null, default: `now()`]
+
+    indexes {
+      (event_id, inv_user_id) [primary key]
+    }
+}
+
+Table locations as l {
+  location_id integer [primary key]
+  location_name varchar(255)
+  address varchar(255)
   desc text [note: 'Content of the post']
   user_id integer [not null]
   created_at timestamp
 }
 
-Ref user_posts: locations.user_id > users.id
-Ref: users.id < events.rsvp_user_id
-Ref: users.id < events.creator_user_id
+Ref: e.creator_user_id > u.user_id [color: #ff0000]
+Ref: e.event_loc > l.location_id [color: #ff0000]
+Ref: m_e.event_id > e.event_id [color: #ff0000]
+Ref: m_e.manager_id > u.user_id [color: #ff0000]
+Ref: i.event_id > e.event_id [color: #ff0000]
+Ref: i.inv_user_id > u.user_id [color: #ff0000]
+Ref: l.user_id > u.user_id [color: #ff0000]

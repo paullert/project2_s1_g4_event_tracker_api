@@ -37,7 +37,7 @@ Table manager_event as m_e {
     manager_id integer [not null] // composite primary key, foreign key
 
      indexes {
-     (event_id, manager_id) [primary key] // Defines Composite Primary Key
+     (event_id, manager_id) [pk] // Defines Composite Primary Key
    }
 }
 
@@ -60,7 +60,7 @@ Table invites as i {
     responded_at timestamp
 
     indexes {
-      (event_id, user_id) [primary key] // Defines Composite Primary Key
+      (event_id, user_id) [pk] // Defines Composite Primary Key
       event_id [name: 'event_invite_index', note: 'Speeds up queries, indexes invites by events']
       user_id [name: 'user_invite_index', note: 'Speeds up queries, indexes invites by users']
     }

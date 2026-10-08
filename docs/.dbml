@@ -18,6 +18,10 @@ Table users as u {
   created_at timestamp
 }
 
+records users(user_id, username, role) {
+  1, paul, paullert, yes
+}
+
 Table manager_event as m_e {
     event_id integer [primary key, ref: > e.event_id] // Many references to an event can exist
     manager_id integer [primary key, ref: > u.user_id] // Many references to an user can exist

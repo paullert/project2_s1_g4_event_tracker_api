@@ -2,13 +2,13 @@
 // Docs: https://dbml.dbdiagram.io/docs
 
 Table events as e {
+  event_id integer [primary key]
   creator_user_id integer [ref: - u.user_id]
-  event_id integer
   event_name varchar
-  event_desc varchar
+  event_desc varchar //description
+  event_loc varchar //location
   created_at timestamp
   starts_on timestamp
-  current_events integer [primary key, ref: > e.event_id] // Many references to an event can exist
 }
 
 Table users as u {
@@ -27,12 +27,15 @@ Table archived_events as a_e {
   arc_event_name varchar
   arc_event_date varchar
   arc_event_size integer //final number of attendees
+  arc_event_desc varchar //description
+  arc_event_loc varchar //location
+  happened_on timestamp
 }
 
 Table invites as i {
     event_id integer [primary key, ref: > e.event_id] // Many references to an event can exist
     inv_user_id integer [primary key, ref: > u.user_id] // Many references to an user can exist
-    response bool //3 options: Undefined, Accepted, Declined
+    response varchar //3 options: Undefined, Accepted, Declined
     message text
     dateSent datetime
 }
@@ -46,5 +49,5 @@ Table locations as l {
   created_at timestamp
 }
 
-Ref user_posts: l.user_id > u.user_id
-Ref: u.user_id < e.creator_user_id
+Ref user_posts: l.user_id > u.user_id [color: #ff0000]
+Ref: u.user_id < e.creator_user_id [color: #ff0000]

@@ -1,22 +1,20 @@
-# Starter OpenAPI contract for CST 438 Project 02.
-# Copy to docs/openapi.yaml in your repo, then replace Workout/Exercise with YOUR resources.
+# OpenAPI contract for CST 438 Project 02.
 # Render it:   https://editor.swagger.io  (File > Import file, or paste)
 # Lint it:     npx @redocly/cli lint docs/openapi.yaml
 # Mock it:     npx @stoplight/prism-cli mock docs/openapi.yaml   -> http://127.0.0.1:4010
 openapi: 3.0.3
 
 info:
-  title: Workout Tracker API
+  title: Event Tracker API
   version: 1.0.0
   description: |
-    Example contract for a workout tracker. Users log workouts made of exercises.
-    Every error uses RFC 9457 Problem Details (see components/schemas/Problem).
+    Users accept invites to digitally track events hosted by other users with advanced permissions.
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   contact:
-    name: Team 00
-    url: https://github.com/OWNER/REPO
+    name: Team 04
+    url: https://github.com/paullert/project2_s1_g4_event_tracker_api
 
 servers:
   - url: http://localhost:8080
@@ -29,150 +27,165 @@ security:
   - bearerAuth: []
 
 tags:
-  - name: Workouts
-    description: A user's own workouts
-  - name: Exercises
-    description: The shared exercise catalog
-  - name: Users
-    description: The signed-in user's own account
+  - name: Unregistered
+    description: Endpoints accessible to all unauthenticated users
+  - name: Registered
+    description: Endpoints accessible to all signed-in users
+  - name: Manager
+    description: Endpoints accessible to all users with the Manager role
   - name: Admin
-    description: Admin-only user management
+    description: Endpoints accessible to all users with the Admin role
+  - name: Invites
+    description: Endpoints related to invites
+  - name: Events
+    description: Endpoints related to events, non-GET endpoints locked to manager role and above
+  - name: Locations
+    description: Endpoints related to physical locations
+
 
 paths:
-  /api/v1/workouts:
+  /api/v1/events:
     get:
-      tags: [Workouts]
-      operationId: listMyWorkouts
-      summary: List my workouts (paginated, sortable)
+      tags: [Events, Unregistered]
+      operationId: listPublicEvents
+      summary: List of currently active, public, events (paginated)
+      security: []
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
         - name: sort
           in: query
-          description: Field and direction, Spring Pageable style.
+          description: Field and direction, Spring Pageable style. Default is 'date,asc'
           schema:
             type: string
-            enum: ['performedOn,desc', 'performedOn,asc']
-            default: 'performedOn,desc'
+            enum: ['eventDate,desc', 'eventDate,asc']
+            default: 'eventDate,desc'
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
         '400':
           $ref: '#/components/responses/BadRequest'
         '200':
-          description: One page of the caller's workouts
+          description: One page of active events
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkoutPage'
+                $ref: '#/components/schemas/EventPage'
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Workouts]
-      operationId: createWorkout
-      summary: Log a workout
+      tags: [Events, Manager]
+      operationId: createEvent
+      summary: Create a new event (manager only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WorkoutCreate'
+              $ref: '#/components/schemas/EventCreate'
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
         '201':
-          description: Created. POST is not idempotent; two calls make two workouts.
+          description: Created. POST is not idempotent; two calls make two events.
           headers:
             Location:
-              description: URL of the new workout
+              description: URL of the new event
               schema:
                 type: string
-                example: /api/v1/workouts/42
+                example: /api/v1/events/3
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workout'
+                $ref: '#/components/schemas/Event'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
-  /api/v1/workouts/{workoutId}:
+  /api/v1/events/{eventId}:
     parameters:
-      - $ref: '#/components/parameters/WorkoutId'
+      - $ref: '#/components/parameters/EventId'
     get:
-      tags: [Workouts]
-      operationId: getWorkout
-      summary: Get one of my workouts
+      tags: [Events, Unregistered]
+      operationId: getEvent
+      summary: Get one active event (public)
+      security: []
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
         '400':
           $ref: '#/components/responses/BadRequest'
         '200':
-          description: The workout
+          description: The event
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workout'
+                $ref: '#/components/schemas/Event'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
     put:
-      tags: [Workouts]
-      operationId: replaceWorkout
-      summary: Replace a workout (idempotent)
+      tags: [Events, Admin]
+      operationId: replaceEvent
+      summary: Replace an event (idempotent)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WorkoutCreate'
+              $ref: '#/components/schemas/EventCreate'
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
         '200':
-          description: The replaced workout
+          description: The replaced event
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workout'
+                $ref: '#/components/schemas/Event'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Workouts]
-      operationId: updateWorkout
-      summary: Change some fields of a workout
+      tags: [Events, Manager]
+      operationId: updateEvent
+      summary: Change some fields of an event
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WorkoutPatch'
+              $ref: '#/components/schemas/EventPatch'
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
         '200':
-          description: The updated workout
+          description: The updated event
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workout'
+                $ref: '#/components/schemas/Event'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
-      tags: [Workouts]
-      operationId: deleteWorkout
-      summary: Delete a workout
+      tags: [Events, Manager]
+      operationId: deleteEvent
+      summary: Delete an event (manager only)
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
@@ -182,32 +195,123 @@ paths:
           description: Deleted. No body.
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /api/v1/exercises:
+  /api/v1/events/{eventId}/invites:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
     get:
-      tags: [Exercises]
-      operationId: listExercises
-      summary: Browse the exercise catalog (public, filterable)
+      tags: [Invites, Manager, Admin]
+      operationId: listEventInvites
+      summary: List invites for an event (manager or admin)
+      description: Lists all invitations associated with the event. Requires MANAGER or ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '200':
+          description: The invites to the specified event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+    post:
+      tags: [Invites, Manager, Admin]
+      operationId: createEventInvite
+      summary: Invite a user to an event (manager or admin)
+      description: Creates an invitation for a user. Requires MANAGER or ADMIN.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteCreate'
+      responses:
+        '201':
+          description: Invitation created
+          headers:
+            Location:
+              description: URL of the new invitation
+              schema:
+                type: string
+                example: /api/v1/invites/18
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/events/{eventId}/totalAttendees:
+    get:
+      tags: [Unregistered, Registered, Events]
+      operationId: getEventTotalAttendees
+      summary: Get the total number of attendees for an event. Results vary depending on whether the event is public or private.
+      security: # TODO: Should use token optionally
+      parameters:
+        - name: archived # TODO: possibly remove this, rethink how archived events are accessed
+          in: query
+          description: Whether to search archived events in the count.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '200':
+          description: The total number of attendees
+          content:
+            application/json:
+              schema:
+                type: integer
+                example: 12345
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/locations:
+    get:
+      tags: [Locations]
+      operationId: listLocations
+      summary: View registered locations (public, filterable)
       security: []          # public: no token needed
       parameters:
-        - name: muscleGroup
+        - name: sort
           in: query
-          description: Only exercises for this muscle group
+          description: Field and direction, Spring Pageable style. Default is 'updateDate,desc'.
           schema:
-            $ref: '#/components/schemas/MuscleGroup'
+            type: string
+            enum: [ 'updateDate,desc', 'updateDate,asc' ]
+            default: 'updateDate,desc'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
         '200':
-          description: One page of exercises
+          description: One page of locations
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExercisePage'
+                $ref: '#/components/schemas/LocationPage'
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -216,7 +320,7 @@ paths:
       tags: [Users]
       operationId: deleteMyAccount
       summary: Delete my own account and ALL my data
-      description: Any signed-in user. Deletes the user row and everything they own (workouts, custom exercises).
+      description: Any signed-in user. Deletes the user row and everything they own (event invitations).
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
@@ -224,6 +328,59 @@ paths:
           description: Deleted. The token is now useless.
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/users/me/invites:
+    get:
+      tags: [ Users, Invites ]
+      operationId: listMyInvites
+      summary: Get invites to events I'm invited to
+      description: Returns invitations addressed to the authenticated user.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '200':
+          description: The authenticated user's invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/users/me/invites/{inviteId}:
+    parameters:
+      - $ref: '#/components/parameters/InviteId'
+    patch:
+      tags: [ Users, Invites, Registered ]
+      operationId: respondToMyInvite
+      summary: Accept or decline my invitation
+      description: The authenticated user may accept or decline an invitation addressed to them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteResponsePatch'
+      responses:
+        '200':
+          description: The updated invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /api/v1/users:
     get:
@@ -325,6 +482,119 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/v1/users/{userId}/invites:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [Invites, Admin]
+      operationId: listUserInvites
+      summary: List a user's invites (admin only)
+      description: Lists invitations addressed to the specified user. Requires ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: The user's invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/invites:
+    get:
+      tags: [Invites, Admin]
+      operationId: listAllInvites
+      summary: List all invites (admin only)
+      description: Lists invitations across all users and events. Requires ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: All invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/invites/{inviteId}:
+    parameters:
+      - $ref: '#/components/parameters/InviteId'
+    get:
+      tags: [Invites, Admin]
+      operationId: getInvite
+      summary: Get an invite (admin only)
+      description: Requires ADMIN.
+      responses:
+        '200':
+          description: The invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Invites, Admin]
+      operationId: updateInvite
+      summary: Update an invite (admin only)
+      description: Allows an administrator to change an invitation's status or message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteAdminPatch'
+      responses:
+        '200':
+          description: The updated invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Invites, Admin]
+      operationId: deleteInvite
+      summary: Delete an invite (admin only)
+      description: Requires ADMIN.
+      responses:
+        '204':
+          description: Invitation deleted. No body.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
 components:
   securitySchemes:
     bearerAuth:
@@ -334,14 +604,30 @@ components:
       description: JWT from the OAuth2 Authorization Code + PKCE flow (with Google, send the ID token; Google's access_token is opaque).
 
   parameters:
-    WorkoutId:
-      name: workoutId
+    EventId:
+      name: eventId
       in: path
       required: true
       schema:
         type: integer
         format: int64
         example: 42
+    InviteId:
+      name: inviteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 18
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 7
     Page:
       name: page
       in: query
@@ -361,118 +647,184 @@ components:
         default: 20
 
   schemas:
-    MuscleGroup:
-      type: string
-      enum: [CHEST, BACK, LEGS, SHOULDERS, ARMS, CORE, CARDIO]
-
-    Workout:
+    Event:
       type: object
-      required: [id, performedOn, exercises]
+      required: [ eventId, eventName, eventDescription, startsOn, creatorId, updatedAt ]
       properties:
-        id:
+        eventId:
           type: integer
           format: int64
           readOnly: true
           example: 42
-        performedOn:
+          description: Internal DB id of the event.
+        eventName:
           type: string
-          format: date
-          example: '2026-10-01'
-        durationMin:
+          example: 2026 Summer Bash-athon
+          maxLength: 255
+          description: The name of the event.
+        eventDescription:
+          type: string
+          example: Lots of bashing and side activities.
+          description: The description of the event.
+        startsOn:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time of the event's start.
+        creatorId:
           type: integer
-          minimum: 1
-          nullable: true
-          example: 45
-        notes:
-          type: string
-          maxLength: 500
-          nullable: true
-          example: Felt strong today
-        exercises:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkoutExercise'
+          format: int64
+          example: 7
+          description: The user who created the event, refernced by internal DB id.
+        updatedAt:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time of the last edit to the event.
 
-    WorkoutCreate:
+    EventCreate:
       description: Body for POST and PUT. PUT replaces every field.
       type: object
-      required: [performedOn, exercises]
+      required: [ eventId, eventName, eventDescription, startsOn, creatorId ] # omits updatedOn, will automatically update value
       properties:
-        performedOn:
-          type: string
-          format: date
-          example: '2026-10-01'
-        durationMin:
+        eventId:
           type: integer
-          minimum: 1
-          nullable: true
-          example: 45
-        notes:
+          format: int64
+          readOnly: true
+          example: 42
+          description: Internal DB id of the event.
+        eventName:
           type: string
-          maxLength: 500
-          nullable: true
-        exercises:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/WorkoutExercise'
+          example: 2026 Summer Bash-athon
+          maxLength: 255
+          description: The name of the event.
+        eventDescription:
+          type: string
+          example: Lots of bashing and side activities.
+          description: The description of the event.
+        startsOn:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time of the event's start.
+        creatorId:
+          type: integer
+          format: int64
+          example: 7
+          description: The user who created the event, refernced by internal DB id.
 
-    WorkoutPatch:
+    EventPatch:
       description: Body for PATCH. Send only the fields you want to change.
       type: object
       minProperties: 1
-      properties:
-        durationMin:
-          type: integer
-          minimum: 1
-          nullable: true
-        notes:
+      properties: # omits updatedOn, will automatically update value
+        eventName:
           type: string
-          maxLength: 500
-          nullable: true
-
-    WorkoutExercise:
-      type: object
-      required: [exerciseId, sets, reps]
-      properties:
-        exerciseId:
+          example: 2026 Summer Bash-athon
+          maxLength: 255
+          description: The name of the event.
+        eventDescription:
+          type: string
+          example: Lots of bashing and side activities.
+          description: The description of the event.
+        startsOn:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time of the event's start.
+        creatorId:
           type: integer
           format: int64
           example: 7
-        sets:
+          description: The user who created the event, refernced by internal DB id.
+
+    Location:
+      type: object
+      required: [ locationId, locationName, address, updatedAt ]
+      properties:
+        locationId:
           type: integer
-          minimum: 1
-          example: 3
-        reps:
+          format: int64
+          example: 7
+        locationName:
+          type: string
+          maxLength: 255
+        address:
           type: integer
           minimum: 1
           example: 10
-        weightKg:
-          type: number
-          format: double
-          nullable: true
-          example: 60.0
+        locationDesc:
+          type: string
+        updatedAt:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time of the last edit to the location.
 
-    Exercise:
+    Invite:
       type: object
-      required: [id, name, muscleGroup]
+      required: [ userId, eventId, status, invitedAt ]
       properties:
-        id:
+        userId:
           type: integer
           format: int64
           example: 7
-        name:
+        eventId:
+          type: integer
+          format: int64
+          example: 7
+        status:
+          $ref: '#/components/schemas/InviteStatus'
+        message:
           type: string
-          example: Back Squat
-        muscleGroup:
-          $ref: '#/components/schemas/MuscleGroup'
+          maxLength: 1000
+        invitedAt:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time of when the invite was sent.
+        respondedAt:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          readOnly: true
+          nullable: true
+          description: The date and time when the invite was accepted or declined.
+
+    InviteCreate:
+      type: object
+      required: [ userId ]
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 7
+          description: The user being invited. The event is taken from the path.
+        message:
+          type: string
+          maxLength: 1000
+
+    InviteResponsePatch:
+      type: object
+      required: [ status ]
+      properties:
+        status:
+          type: string
+          enum: [ ACCEPTED, DECLINED ]
+
+    InviteAdminPatch:
+      type: object
+      minProperties: 1
+      properties:
+        status:
+          $ref: '#/components/schemas/InviteStatus'
+        message:
+          type: string
+          maxLength: 1000
+
+    InviteStatus:
+      type: string
+      enum: [ PENDING, ACCEPTED, DECLINED, REVOKED ]
 
     PageMeta:
       description: >-
         Spring Data's PagedModel shape. Turn it on with
         spring.data.web.pageable.serialization-mode=via_dto in application.properties.
       type: object
-      required: [size, number, totalElements, totalPages]
+      required: [ size, number, totalElements, totalPages ]
       properties:
         size:
           type: integer
@@ -488,61 +840,96 @@ components:
           type: integer
           example: 3
 
-    WorkoutPage:
+    EventPage:
       type: object
-      required: [content, page]
+      required: [ content, page ]
       properties:
         content:
           type: array
           items:
-            $ref: '#/components/schemas/Workout'
+            $ref: '#/components/schemas/Event'
         page:
           $ref: '#/components/schemas/PageMeta'
 
-    ExercisePage:
+    LocationPage:
       type: object
-      required: [content, page]
+      required: [ content, page ]
       properties:
         content:
           type: array
           items:
-            $ref: '#/components/schemas/Exercise'
+            $ref: '#/components/schemas/Location'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    InvitePage:
+      type: object
+      required: [ content, page ]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invite'
         page:
           $ref: '#/components/schemas/PageMeta'
 
     User:
       type: object
-      required: [id, email, displayName, role]
+      required: [ userId, username, role, createdAt ]
       properties:
-        id:
+        userId:
           type: integer
           format: int64
-          example: 7
-        email:
+          example: 3
+        username:
           type: string
-          format: email
-          example: sam@csumb.edu
-        displayName:
+          maxLength: 100
+        password:
           type: string
-          example: Sam Otter
+          format: password
+          maxLength: 100
         role:
           $ref: '#/components/schemas/Role'
+        createdAt:
+          allOf:
+            - $ref: '#/components/schemas/Date-Time'
+          description: The date and time when a user's account was created.
 
     Role:
       type: string
-      enum: [USER, ADMIN]
+      enum: [ USER, MANAGER, ADMIN ]
+
+    Date-Time:
+      type: string
+      format: date-time
+      example: 2022-01-01T00:00:00.000Z
+
 
     UserPatch:
-      description: Body for PATCH /api/v1/users/{userId}. Today the only editable field is the role.
+      description: Body for PATCH /api/v1/users/{userId}.
       type: object
-      required: [role]
+      minProperties: 1
       properties:
+        userId:
+          type: integer
+          format: int64
+          example: 21
+        username:
+          type: string
+          maxLength: 100
+        password:
+          type: string
+          format: password
+          maxLength: 100
+        createdAt:
+          $ref: '#/components/schemas/Date-Time'
+          description: The date and time when a user's account was created.
         role:
           $ref: '#/components/schemas/Role'
 
     UserPage:
       type: object
-      required: [content, page]
+      required: [ content, page ]
       properties:
         content:
           type: array
@@ -554,7 +941,7 @@ components:
     Problem:
       description: RFC 9457 Problem Details. The ONE error body every endpoint returns.
       type: object
-      required: [title, status]
+      required: [ title, status ]
       properties:
         type:
           type: string
@@ -620,3 +1007,12 @@ components:
           example:
             title: Internal Server Error
             status: 500
+    Conflict:
+      description: The invite conflicts with the current resource state, such as an existing invite.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            title: Conflict
+            status: 409

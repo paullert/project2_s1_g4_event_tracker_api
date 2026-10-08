@@ -1,3 +1,5 @@
+// Used to generate full sql file containing schema and seed data
+
 Project event_tracker_api {
   database_type: 'PostgreSQL'
   Note: 'Event tracker Database, stores event locations, users, invites, and events'

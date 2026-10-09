@@ -32,19 +32,17 @@ jobs:
 
       - name: Convert DBML to SQL
         run: |
-          combined_dbml="$(mktemp --suffix=.dbml)"
-          trap 'rm -f "$combined_dbml"' EXIT
-
-          {
-            cat docs/diagrams/schema.dbml
-            printf '\n\n'
-            cat docs/diagrams/seed-data.dbml
-          } > "$combined_dbml"
+          mkdir -p docs/sql/archive
 
           npx --yes --package @dbml/cli dbml2sql \
             "$combined_dbml" \
             --postgres \
             --out-file docs/sql/database.sql
+
+          version=$(printf '%04d' "${{ github.run_number }}")
+
+          cp docs/sql/database.sql \
+            "docs/sql/archive/V${version}__database.sql"
 
       - name: Verify SQL output
         run: |

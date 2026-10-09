@@ -3,7 +3,7 @@ name: Convert DBML to SVG
 on:
   push:
     paths:
-      - 'docs/.dbml'
+      - 'docs/diagrams/schema.dbml'
 
 jobs:
   render:
@@ -23,12 +23,12 @@ jobs:
 
       - name: Show DBML around failing line
         run: |
-          nl -ba docs/.dbml | sed -n '22,30p'
+          nl -ba docs/diagrams/schema.dbml | sed -n '22,30p'
 
       - name: Render DBML to SVG
         run: |
           npx --yes @softwaretechnik/dbml-renderer@1.0.31 \
-            -i docs/.dbml \
+            -i docs/diagrams/schema.dbml \
             -o docs/diagrams/schema.svg
 
       - name: Commit and push changes

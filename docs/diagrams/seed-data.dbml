@@ -1,0 +1,45 @@
+// NOTE: This file needs to be used in conjunction with schema.dbml
+
+records users (user_id, username, role, created_at, updated_at) {
+    0, 'system','ADMIN', 'now()', 'now()'
+    , 'admin_demo_1','ADMIN','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'admin_demo_2','ADMIN','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'manager_demo_1','MANAGER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'manager_demo_2','MANAGER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'manager_demo_3','MANAGER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'ann_demo','USER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'sarah_demo','USER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'paul_demo','USER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+    , 'billy_demo','USER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411'
+}
+
+records locations (location_name, address, location_desc, created_at, updated_at, creator_id) {
+'Student Center','CSUMB Campus','Main student gathering space','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'University Library','CSUMB Campus','Quiet indoor event location','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'Outdoor Amphitheater','CSUMB Campus','Outdoor event space','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'Monterey Bay Aquarium','Monterey, CA','Large indoor venue','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'Downtown Monterey','Monterey, CA','Central community event area','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'Carmel Beach','Carmel-by-the-Sea, CA','Outdoor beach location','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'Salinas Community Center','Salinas, CA','Indoor community venue','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'Seaside Conference Center','Seaside, CA','Conference and meeting space','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+'Pacific Grove Recreation Center','Pacific Grove, CA','Indoor recreation venue','2026-10-07 21:24:05.619425', '2026-10-07 21:24:05.619425', 0
+}
+
+records events (event_name, event_desc, starts_on, creator_id, created_at, updated_at, location_id ) {
+    'Community Game Night','An evening of board games and snacks.','2026-11-15 18:00:00','3','2026-10-07 21:33:37.859388', '2026-10-07 21:33:37.859388','1'
+    'Beach Cleanup','A community cleanup and conservation event.','2026-12-05 09:00:00','4','2026-10-07 21:33:37.859388', '2026-10-07 21:33:37.859388','6'
+}
+
+records invites (user_id, event_id, status, invited_at, responded_at) {
+    '6','1','ACCEPTED','2026-10-07 21:44:13.778439','2026-10-08 10:00:00'
+    '7','1','ACCEPTED','2026-10-07 21:44:13.778439','2026-10-08 11:30:00'
+    '8','1','DECLINED','2026-10-07 21:44:13.778439','2026-10-08 12:00:00'
+    '9','1','PENDING','2026-10-07 21:44:13.778439', null
+    '6','2','ACCEPTED','2026-10-07 21:44:13.778439','2026-10-09 09:00:00'
+    '7','2','DECLINED','2026-10-07 21:44:13.778439','2026-10-09 10:15:00'
+    '8','2','PENDING','2026-10-07 21:44:13.778439', null
+}
+
+
+
+

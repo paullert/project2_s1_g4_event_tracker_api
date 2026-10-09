@@ -1,0 +1,90 @@
+name: Convert DBML to SQL
+
+on:
+  push:
+    paths:
+      - 'docs/diagrams/schema.dbml'
+      - 'docs/diagrams/seed-data.dbml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-sql:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Detect DBML changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            schema:
+              - 'docs/diagrams/schema.dbml'
+            seed:
+              - 'docs/diagrams/seed-data.dbml'
+
+      - name: Create output directories
+        run: |
+          mkdir -p docs/sql/archive
+
+      - name: Archive previous SQL after schema changes
+        if: steps.changes.outputs.schema == 'true'
+        run: |
+          if [ -f docs/sql/database.sql ]; then
+            version=$(printf '%04d' "${{ github.run_number }}")
+
+            cp docs/sql/database.sql \
+              "docs/sql/archive/V${version}__database.sql"
+
+            echo "Archived previous database.sql as V${version}__database.sql"
+          else
+            echo "No previous database.sql exists to archive."
+          fi
+
+      - name: Combine DBML files and convert to SQL
+        run: |
+          combined_dbml="$(mktemp --suffix=.dbml)"
+          trap 'rm -f "$combined_dbml"' EXIT
+
+          {
+            cat docs/diagrams/schema.dbml
+            printf '\n\n'
+            cat docs/diagrams/seed-data.dbml
+          } > "$combined_dbml"
+
+          npx --yes --package @dbml/cli dbml2sql \
+            "$combined_dbml" \
+            --postgres \
+            --out-file docs/sql/database.sql
+
+      - name: Verify SQL output
+        run: |
+          ls -la docs/sql
+          test -s docs/sql/database.sql
+
+      - name: Commit and push generated SQL
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A docs/sql/
+
+          if git diff --cached --quiet; then
+            echo "No SQL changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Auto-update database SQL files"
+          git push

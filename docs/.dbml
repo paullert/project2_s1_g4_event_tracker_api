@@ -2,7 +2,7 @@
 // Docs: https://dbml.dbdiagram.io/docs
 
 Enum user_role {
-  user
+  guest
   manager
   admin
 }
@@ -14,7 +14,7 @@ Enum invite_response {
 }
 
 Table events as e {
-  event_id integer [primary key, increment]
+  event_id integer [increment] //primary key
   event_name varchar(255) [not null]
   event_desc text [not null] //description
   event_loc integer [not null, ref: > l.location_id] //location
@@ -24,15 +24,15 @@ Table events as e {
 }
 
 Table users as u {
-  user_id integer [primary key, increment]
+  user_id integer [increment] //primary key
   username varchar(255) [not null, unique]
   user_role user_role [not null, default: `user`]
   created_at timestamp [default: `now()`]
 }
 
 Table manager_event as m_e {
-    event_id integer [not null, primary key, ref: > e.event_id] // Many references to an event can exist
-    manager_id integer [not null, primary key, ref: > u.user_id] // Many references to an user can exist
+    event_id integer [not null] // Many references to an event can exist; primary key
+    manager_id integer [not null] // Many references to an user can exist; primary key
 
      indexes {
      (event_id, manager_id) [primary key]
@@ -40,7 +40,7 @@ Table manager_event as m_e {
 }
 
 Table archived_events as a_e {
-  arc_event_id integer [primary key]
+  arc_event_id integer //primary key
   arc_event_name varchar(255)
   arc_event_date timestamp
   arc_event_size integer //final number of attendees
@@ -50,8 +50,8 @@ Table archived_events as a_e {
 }
 
 Table invites as i {
-    event_id integer [not null, primary key, ref: > e.event_id] // Many references to an event can exist
-    inv_user_id integer [not null, primary key, ref: > u.user_id] // Many references to an user can exist
+    event_id integer [not null] // Many references to an event can exist; primary key
+    inv_user_id integer [not null] // Many references to an user can exist; primary key
     response invite_response [not null, default: 'undefined']
     message text
     sent_at timestamp [not null, default: `now()`]
@@ -62,7 +62,7 @@ Table invites as i {
 }
 
 Table locations as l {
-  location_id integer [primary key]
+  location_id integer //primary key
   location_name varchar(255)
   address varchar(255)
   desc text [note: 'Content of the post']

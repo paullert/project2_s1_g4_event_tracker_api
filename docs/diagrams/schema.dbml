@@ -1,0 +1,85 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Enum user_role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+Enum invite_response {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+Table events as e {
+  event_id integer [primary key, increment]
+  event_name varchar(255) [not null]
+  event_desc text [not null]
+  location_id integer [not null] // foreign key
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+  starts_on timestamp [not null]
+  creator_id integer [not null] // foreign key, represents a user
+}
+
+Table users as u {
+  user_id integer [primary key, increment]
+  username varchar(100) [not null, unique]
+  role user_role [not null, default: `USER`]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp
+}
+
+Table manager_event as m_e {
+    event_id integer [not null] // composite primary key, foreign key
+    manager_id integer [not null] // composite primary key, foreign key
+
+     indexes {
+     (event_id, manager_id) [pk] // Defines Composite Primary Key
+   }
+}
+
+Table archived_events as a_e {
+  arc_event_id integer [primary key]
+  arc_event_name varchar(255)
+  arc_event_date timestamp
+  arc_event_size integer // final number of attendees
+  arc_event_desc varchar(255) // description
+  arc_event_loc varchar(255) // location
+  happened_on timestamp
+}
+
+Table invites as i {
+    event_id integer [not null] // composite primary key, foreign key
+    user_id integer [not null] // composite primary key, foreign key
+    status invite_response [not null, default: 'PENDING']
+    message text
+    invited_at timestamp [not null, default: `now()`]
+    responded_at timestamp
+
+    indexes {
+      (event_id, user_id) [pk] // Defines Composite Primary Key
+      event_id [name: 'event_invite_index', note: 'Speeds up queries, indexes invites by events']
+      user_id [name: 'user_invite_index', note: 'Speeds up queries, indexes invites by users']
+    }
+}
+
+Table locations as l {
+  location_id integer [primary key, increment]
+  location_name varchar(255)
+  address varchar(255) [not null]
+  location_desc text [note: 'Basic Description, holds navigation tips and or building info']
+  creator_id integer [not null, note: 'Most of the time, this will be an admin or a defacto "System" account, such as user 0'] // foreign key
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp
+}
+
+Ref: e.creator_id > u.user_id [color: #ff0000]
+Ref: e.location_id > l.location_id [color: #ff0000]
+Ref: m_e.event_id > e.event_id [color: #ff0000]
+Ref: m_e.manager_id > u.user_id [color: #ff0000]
+Ref: i.event_id > e.event_id [color: #ff0000]
+Ref: i.user_id > u.user_id [color: #ff0000]
+Ref: l.creator_id > u.user_id [color: #ff0000]

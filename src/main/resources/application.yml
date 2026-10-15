@@ -1,0 +1,19 @@
+server:
+  port: 8080
+google:
+  oauth2:
+    client-id: ${GOOGLE_CLIENT_ID}
+app:
+  pagination:
+    default-page-size: 20
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+# spring:
+#  security:
+#    user:
+#      name: admin
+#      password: secret

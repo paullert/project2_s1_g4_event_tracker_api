@@ -1,18 +1,13 @@
 package cst438.project2.backend.service;
 
-import cst438.project2.backend.dto.InviteResponse;
-import cst438.project2.backend.model.Event;
-import cst438.project2.backend.model.Invite;
 import cst438.project2.backend.model.User;
 import cst438.project2.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {

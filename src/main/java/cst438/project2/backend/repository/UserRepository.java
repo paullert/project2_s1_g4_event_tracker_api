@@ -1,9 +1,6 @@
 package cst438.project2.backend.repository;
-import cst438.project2.backend.model.Invite;
+
 import cst438.project2.backend.model.User;
-import java.util.List;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 

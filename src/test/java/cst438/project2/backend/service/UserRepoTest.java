@@ -1,9 +1,10 @@
-package cst438.project2.backend.repository;
+package cst438.project2.backend.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import cst438.project2.backend.model.User;
 
+import cst438.project2.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

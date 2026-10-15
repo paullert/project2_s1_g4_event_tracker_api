@@ -32,4 +32,9 @@ public class InviteService {
             );
         }).toList();
     }
+
+    @Transactional(readOnly = true)
+    public long getAcceptedAttendeeCount(Long eventId) {
+        return inviteRepository.countByEventIdAndStatus(eventId, "ACCEPTED");
+    }
 }

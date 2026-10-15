@@ -3,6 +3,7 @@ package cst438.project2.backend.model;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
@@ -13,6 +14,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "users")
@@ -26,8 +28,9 @@ public class User {
   @Column(name = "username", nullable = false, unique = true, length = 255)
   private String username;
 
-  // Enums need special annotation
+  // Enums need special annotations
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "role", nullable = false, columnDefinition = "user_role") // columnDefinition passes raw SQL to the database, in this case the enum type
   private UserRole role = UserRole.USER; //    ... = ... means that it has a default value if none is specified
 

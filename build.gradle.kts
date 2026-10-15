@@ -26,6 +26,14 @@ dependencies {
 
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	runtimeOnly("org.postgresql:postgresql")
+
+    // Used to test user service and user repository
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+
+    // Used to test user auth
+    testImplementation("org.springframework.security:spring-security-test")
 }
 
 tasks.withType<Test> {

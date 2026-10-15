@@ -1,0 +1,72 @@
+package cst438.project2.backend.model;
+
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "users")
+public class User {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "user_id")
+  private Long userId;
+
+  @Column(name = "username", nullable = false, unique = true, length = 255)
+  private String username;
+
+  // Enums need special annotation
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false, columnDefinition = "user_role") // columnDefinition passes raw SQL to the database, in this case the enum type
+  private UserRole role = UserRole.USER; //    ... = ... means that it has a default value if none is specified
+
+  @CreationTimestamp // Defaults value to current timestamp
+  @Column(name = "created_at")
+  private LocalDateTime createdAt;
+
+  @UpdateTimestamp // On update, sets value to current timestamp
+  @Column(name = "updated_at")
+  private LocalDateTime updatedAt;
+
+  public User() {
+  }
+
+  public Long getUserId() {
+    return userId;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public UserRole getRole() {
+    return role;
+  }
+
+  public void setRole(UserRole role) {
+    this.role = role;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+}

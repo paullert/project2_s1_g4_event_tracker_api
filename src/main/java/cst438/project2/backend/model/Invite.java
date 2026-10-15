@@ -38,6 +38,14 @@ public class Invite {
 
     }
 
+    public void setStatus(String status){
+        this.status = status;
+    }
+
+    public void setRespondedAt(LocalDateTime respondedAt){
+        this.respondedAt = respondedAt;
+    }
+
     public Long getId(){
         return id;
     }

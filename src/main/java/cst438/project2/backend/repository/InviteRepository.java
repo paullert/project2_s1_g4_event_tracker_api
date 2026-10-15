@@ -8,4 +8,6 @@ public interface InviteRepository extends JpaRepository<Invite, Long> {
     //the spring data jpa can automatically implement the method
     //gets all invitation records given the userid
     List<Invite> findByUserId(Long userId);
+
+    long countByEventIdAndStatus(Long eventId, String status);
 }

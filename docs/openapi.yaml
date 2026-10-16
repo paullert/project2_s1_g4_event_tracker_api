@@ -266,7 +266,7 @@ paths:
       tags: [Unregistered, Registered, Events]
       operationId: getEventTotalAttendees
       summary: Get the total number of attendees for an event. Results vary depending on whether the event is public or private.
-      security: # TODO: Should use token optionally
+      security: [] # TODO: Should use token optionally
       parameters:
         - name: archived # TODO: possibly remove this, rethink how archived events are accessed
           in: query

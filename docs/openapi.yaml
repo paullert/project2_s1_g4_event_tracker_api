@@ -262,11 +262,13 @@ paths:
           $ref: '#/components/responses/Conflict'
 
   /api/v1/events/{eventId}/totalAttendees:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
     get:
       tags: [Unregistered, Registered, Events]
       operationId: getEventTotalAttendees
       summary: Get the total number of attendees for an event. Results vary depending on whether the event is public or private.
-      security: # TODO: Should use token optionally
+      security: [] # TODO: Should use token optionally
       parameters:
         - name: archived # TODO: possibly remove this, rethink how archived events are accessed
           in: query
@@ -781,7 +783,6 @@ components:
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           readOnly: true
-          nullable: true
           description: The date and time when the invite was accepted or declined.
 
     InviteCreate:
@@ -923,7 +924,6 @@ components:
           maxLength: 100
         createdAt:
           $ref: '#/components/schemas/Date-Time'
-          description: The date and time when a user's account was created.
         role:
           $ref: '#/components/schemas/Role'
 

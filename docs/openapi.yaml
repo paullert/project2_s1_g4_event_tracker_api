@@ -262,6 +262,8 @@ paths:
           $ref: '#/components/responses/Conflict'
 
   /api/v1/events/{eventId}/totalAttendees:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
     get:
       tags: [Unregistered, Registered, Events]
       operationId: getEventTotalAttendees
@@ -781,7 +783,6 @@ components:
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           readOnly: true
-          nullable: true
           description: The date and time when the invite was accepted or declined.
 
     InviteCreate:
@@ -923,7 +924,6 @@ components:
           maxLength: 100
         createdAt:
           $ref: '#/components/schemas/Date-Time'
-          description: The date and time when a user's account was created.
         role:
           $ref: '#/components/schemas/Role'
 

@@ -87,6 +87,14 @@ jobs:
           echo "Generated SQL definition:"
           grep -n -i -C 5 'google_subject' docs/sql/database.sql
 
+      - name: Debug generated SQL
+        run: |
+          echo "DBML definition:"
+          grep -n -i 'google_subject' docs/diagrams/schema.dbml
+      
+          echo "Generated SQL:"
+          grep -n -i 'google_subject' docs/sql/database.sql
+
       - name: Fix generated PostgreSQL SQL
         run: |
           python scripts/fix_dbml_sql.py docs/sql/database.sql

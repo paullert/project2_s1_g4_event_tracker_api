@@ -7,7 +7,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class UserService {
@@ -29,5 +31,17 @@ public class UserService {
       );
 
       return userRepository.findAll(pageable);
+    }
+
+    public User getUserByEmail(String email){
+        User user = userRepository.findByUsername(email);
+
+        if(user == null){
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "User not found"
+            );
+        }
+        return user;
     }
 }

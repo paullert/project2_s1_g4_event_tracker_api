@@ -1,7 +1,5 @@
 package cst438.project2.backend.model;
 
-import org.springframework.cglib.core.Local;
-
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;

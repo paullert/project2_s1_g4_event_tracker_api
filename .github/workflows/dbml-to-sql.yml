@@ -1,3 +1,4 @@
+
 name: Convert DBML to SQL
 
 on:
@@ -5,6 +6,8 @@ on:
     paths:
       - 'docs/diagrams/schema.dbml'
       - 'docs/diagrams/seed-data.dbml'
+      - 'scripts/fix_dbml_sql.py'
+      - '.github/workflows/convert-dbml.yml'
   workflow_dispatch:
 
 permissions:
@@ -13,6 +16,28 @@ permissions:
 jobs:
   generate-sql:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser -d testdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: testuser
+      PGPASSWORD: testpassword
+      PGDATABASE: testdb
 
     steps:
       - name: Check out repository
@@ -25,33 +50,18 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Detect DBML changes
-        uses: dorny/paths-filter@v3
-        id: changes
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          filters: |
-            schema:
-              - 'docs/diagrams/schema.dbml'
-            seed:
-              - 'docs/diagrams/seed-data.dbml'
+          python-version: '3.12'
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
       - name: Create output directories
-        run: |
-          mkdir -p docs/sql/archive
-
-      - name: Archive previous SQL after schema changes
-        if: steps.changes.outputs.schema == 'true'
-        run: |
-          if [ -f docs/sql/database.sql ]; then
-            version=$(printf '%04d' "${{ github.run_number }}")
-
-            cp docs/sql/database.sql \
-              "docs/sql/archive/V${version}__database.sql"
-
-            echo "Archived previous database.sql as V${version}__database.sql"
-          else
-            echo "No previous database.sql exists to archive."
-          fi
+        run: mkdir -p docs/sql/archive
 
       - name: Combine DBML files and convert to SQL
         run: |
@@ -64,20 +74,80 @@ jobs:
             cat docs/diagrams/seed-data.dbml
           } > "$combined_dbml"
 
-          npx --yes --package @dbml/cli dbml2sql \
+          npx --yes --package @dbml/cli@10.3.1 dbml2sql \
             "$combined_dbml" \
             --postgres \
             --out-file docs/sql/database.sql
 
-      - name: Verify SQL output
+      - name: Fix generated PostgreSQL SQL
         run: |
-          ls -la docs/sql
+          python scripts/fix_dbml_sql.py docs/sql/database.sql
+
+      - name: Check SQL file
+        run: |
           test -s docs/sql/database.sql
+
+          if grep -nE '&#x20;|\*now\*\(\)|\*USER\*' docs/sql/database.sql; then
+            echo "Unresolved SQL formatting detected"
+            exit 1
+          fi
+
+      - name: Validate against PostgreSQL
+        run: |
+          psql \
+            -v ON_ERROR_STOP=1 \
+            --single-transaction \
+            -f docs/sql/database.sql
+
+      - name: Verify seeded records
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF (SELECT COUNT(*) FROM users) < 11 THEN
+              RAISE EXCEPTION 'Expected at least 11 users';
+            END IF;
+
+            IF (SELECT COUNT(*) FROM locations) < 9 THEN
+              RAISE EXCEPTION 'Expected at least 9 locations';
+            END IF;
+
+            IF (SELECT COUNT(*) FROM events) < 2 THEN
+              RAISE EXCEPTION 'Expected at least 2 events';
+            END IF;
+
+            IF (SELECT COUNT(*) FROM invites) < 7 THEN
+              RAISE EXCEPTION 'Expected at least 7 invites';
+            END IF;
+          END
+          $$;
+          SQL
+
+      - name: Archive previous SQL after schema changes
+        run: |
+          if [ -f docs/sql/database.sql ]; then
+            if git cat-file -e HEAD:docs/sql/database.sql 2>/dev/null; then
+              old_schema="$(mktemp)"
+              new_schema="$(mktemp)"
+              trap 'rm -f "$old_schema" "$new_schema"' EXIT
+
+              git show HEAD:docs/diagrams/schema.dbml \
+                > "$old_schema" 2>/dev/null || true
+              cp docs/diagrams/schema.dbml "$new_schema"
+
+              if ! cmp -s "$old_schema" "$new_schema"; then
+                version=$(printf '%04d' "${{ github.run_number }}")
+                git show HEAD:docs/sql/database.sql \
+                  > "docs/sql/archive/V${version}__database.sql"
+              fi
+            fi
+          fi
 
       - name: Commit and push generated SQL
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add -A docs/sql/
 
@@ -86,5 +156,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Auto-update database SQL files"
+          git commit -m "Auto-update validated database SQL"
           git push

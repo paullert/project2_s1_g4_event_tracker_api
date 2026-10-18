@@ -57,6 +57,13 @@ SELECT setval(
     EXISTS(SELECT 1 FROM "{table}")
 );
 """)
+    # Fix DBML Converter issue, turns "unique" into "NOT NULL UNIQUE"
+    sql = re.sub(
+        r'("google_subject"\s+varchar\(255\)\s+UNIQUE)\s+NOT NULL',
+        r'\1',
+        sql,
+        flags=re.IGNORECASE,
+    )
 
     # Append after all inserts and transaction blocks.
     sql = sql.rstrip() + "\n\n"

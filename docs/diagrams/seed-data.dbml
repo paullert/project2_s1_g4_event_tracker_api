@@ -1,7 +1,7 @@
 // NOTE: This file needs to be used in conjunction with schema.dbml
 
 records users (user_id, username, role, created_at, updated_at, google_subject) {
-    0, 'system','ADMIN', 'now()', 'now()'
+    0, 'system','ADMIN', 'now()', 'now()',
     , 'admin_demo_1','ADMIN','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411',
     , 'admin_demo_2','ADMIN','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411',
     , 'manager_demo_1','MANAGER','2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411',

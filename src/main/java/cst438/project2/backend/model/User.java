@@ -28,6 +28,9 @@ public class User {
   @Column(name = "username", nullable = false, unique = true, length = 255)
   private String username;
 
+  @Column(name = "google_subject", unique = true, nullable = false, length = 255)
+  private String googleSubject;
+
   // Enums need special annotations
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)

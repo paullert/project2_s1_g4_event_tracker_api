@@ -4,14 +4,14 @@
 BEGIN; -- Make all table declarations transactional, good practice
 
 -- Drop all tables & types for easy copy-paste db reconstruction
-DROP TABLE invites;
-DROP TABLE manager_event;
-DROP TABLE events;
-DROP TABLE locations;
-DROP TABLE archived_events;
-DROP TABLE users;
-DROP TYPE user_role;
-DROP TYPE invite_response;
+DROP TABLE IF EXISTS invites;
+DROP TABLE IF EXISTS manager_event;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS locations;
+DROP TABLE IF EXISTS archived_events;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS user_role;
+DROP TYPE IF EXISTS invite_response;
 
 CREATE TYPE "user_role" AS ENUM (
   'USER',

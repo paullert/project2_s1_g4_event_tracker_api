@@ -1,7 +1,8 @@
 package cst438.project2.backend.service;
 
-import cst438.project2.backend.dto.location.LocationCreateRequest;
+import cst438.project2.backend.dto.location.LocationCreate;
 import cst438.project2.backend.dto.location.LocationPatch;
+import cst438.project2.backend.exceptions.BadRequestException;
 import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
@@ -40,7 +41,7 @@ public class LocationService {
     return locationRepository.findAll(pageable);
   }
 
-  public Location createLocation(LocationCreateRequest locationReq, Authentication userAuth) {
+  public Location createLocation(LocationCreate locationReq, Authentication userAuth) {
     User creator = userService.findUserFromAuthentication(userAuth);
     Location location = new Location(
         locationReq.locationName(),
@@ -51,6 +52,7 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
+  //TODO: possibly Remove
   public Location saveLocation(Location location) {
     return locationRepository.save(location);
   }
@@ -69,4 +71,13 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
+  public Location putLocation(Location location, LocationCreate reqBody) {
+    if (reqBody.locationName() == null || reqBody.address() == null || reqBody.locationDescription() == null) {
+      throw new BadRequestException("Missing 1 or more required fields: locationName, address, locationDescription");
+    }
+    location.setAddress(reqBody.address());
+    location.setLocationDescription(reqBody.locationDescription());
+    location.setLocationName(reqBody.locationName());
+    return locationRepository.save(location);
+  }
 }

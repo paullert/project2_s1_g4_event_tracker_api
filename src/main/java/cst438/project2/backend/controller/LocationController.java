@@ -1,12 +1,11 @@
 package cst438.project2.backend.controller;
 
 import cst438.project2.backend.dto.CreationResponse;
-import cst438.project2.backend.dto.location.LocationCreateRequest;
+import cst438.project2.backend.dto.location.LocationCreate;
 import cst438.project2.backend.dto.location.LocationPatch;
 import cst438.project2.backend.dto.location.LocationResponse;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
-import cst438.project2.backend.repository.LocationRepository;
 import cst438.project2.backend.service.LocationService;
 import cst438.project2.backend.service.UserService;
 import org.springframework.data.domain.Page;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -55,7 +53,7 @@ public class LocationController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public CreationResponse<LocationResponse> createLocation(
-      @RequestBody LocationCreateRequest locationReq,
+      @RequestBody LocationCreate locationReq,
       Authentication userAuth) {
     User creator = userService.findUserFromAuthentication(userAuth);
     Location location = locationService.createLocation(locationReq, userAuth);
@@ -75,10 +73,16 @@ public class LocationController {
   @PutMapping("/{locationId}")
   public CreationResponse<LocationResponse> updateLocation(
       @PathVariable Long locationId,
-      @RequestBody LocationCreateRequest locationReq
+      @RequestBody LocationCreate locationReq
   ) {
     Location location = locationService.getLocationById(locationId);
-    return locationService.putLocation(location);
+    location = locationService.putLocation(location, locationReq);
+    return new CreationResponse<>(
+        "Successful",
+        "Location Updated (Put)",
+        String.format("/api/v1/locations/%s", location.getLocationId()),
+        LocationResponse.init(location)
+    );
   }
 
   @PatchMapping("/{locationId}")
@@ -90,7 +94,7 @@ public class LocationController {
     location = locationService.patchLocation(location, locationPatch);
     return new CreationResponse<>(
         "Successful",
-        "Location Updated",
+        "Location Updated (Patch)",
         String.format("/api/v1/locations/%s", location.getLocationId()),
         LocationResponse.init(location)
     ); // TODO: Test patch request

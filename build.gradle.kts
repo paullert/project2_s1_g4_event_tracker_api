@@ -34,6 +34,9 @@ dependencies {
 
     // Used to test user auth
     testImplementation("org.springframework.security:spring-security-test")
+
+    // Used to test user repository
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 }
 
 tasks.withType<Test> {

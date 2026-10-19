@@ -1,6 +1,7 @@
 package cst438.project2.backend.controller;
 
 import cst438.project2.backend.dto.CreationResponse;
+import cst438.project2.backend.dto.DeletionResponse;
 import cst438.project2.backend.dto.location.LocationCreate;
 import cst438.project2.backend.dto.location.LocationPatch;
 import cst438.project2.backend.dto.location.LocationResponse;
@@ -68,7 +69,7 @@ public class LocationController {
   @GetMapping("/{locationId}")
   public LocationResponse getLocation(@PathVariable Long locationId) {
     return LocationResponse.init(locationService.getLocationById(locationId));
-  }
+  } // TODO: Test get request
 
   @PutMapping("/{locationId}")
   public CreationResponse<LocationResponse> updateLocation(
@@ -82,7 +83,7 @@ public class LocationController {
         "Location Updated (Put)",
         String.format("/api/v1/locations/%s", location.getLocationId()),
         LocationResponse.init(location)
-    );
+    ); // TODO: Test put request
   }
 
   @PatchMapping("/{locationId}")
@@ -101,6 +102,14 @@ public class LocationController {
   }
 
   @DeleteMapping("/{locationId}")
-  public void deleteLocation(@PathVariable Long locationId) {
+  public DeletionResponse<LocationResponse> deleteLocation(@PathVariable Long locationId) {
+    Location location = locationService.getLocationById(locationId);
+    locationService.deleteLocation(location);
+    return new DeletionResponse<>(
+        "Success",
+        "Deleted Location",
+        String.format("/api/v1/locations/%d", locationId),
+        LocationResponse.init(location)
+    ); // TODO: Test delete request
   }
 }

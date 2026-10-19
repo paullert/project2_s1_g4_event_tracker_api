@@ -80,4 +80,9 @@ public class LocationService {
     location.setLocationName(reqBody.locationName());
     return locationRepository.save(location);
   }
+
+  public Location deleteLocation(Location location) {
+    locationRepository.delete(location);
+    return location;
+  }
 }

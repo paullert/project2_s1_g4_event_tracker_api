@@ -77,7 +77,8 @@ public class LocationController {
       @PathVariable Long locationId,
       @RequestBody LocationCreateRequest locationReq
   ) {
-    return null; // TODO: Implement put request
+    Location location = locationService.getLocationById(locationId);
+    return locationService.putLocation(location);
   }
 
   @PatchMapping("/{locationId}")
@@ -86,16 +87,7 @@ public class LocationController {
       @RequestBody LocationPatch locationPatch
   ) {
     Location location = locationService.getLocationById(locationId);
-    if (locationPatch.locationName() != null) {
-      location.setLocationName(locationPatch.locationName());
-    }
-    if (locationPatch.address() != null) {
-      location.setAddress(locationPatch.address());
-    }
-    if (locationPatch.locationDescription() != null) {
-      location.setLocationDescription(locationPatch.locationDescription());
-    }
-    location = locationService.saveLocation(location);
+    location = locationService.patchLocation(location, locationPatch);
     return new CreationResponse<>(
         "Successful",
         "Location Updated",

@@ -1,6 +1,7 @@
 package cst438.project2.backend.service;
 
 import cst438.project2.backend.dto.location.LocationCreateRequest;
+import cst438.project2.backend.dto.location.LocationPatch;
 import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
@@ -53,4 +54,19 @@ public class LocationService {
   public Location saveLocation(Location location) {
     return locationRepository.save(location);
   }
+
+  public Location patchLocation(Location location, LocationPatch reqBody) {
+    if (reqBody.locationName() != null) {
+      location.setLocationName(reqBody.locationName());
+    }
+    if (reqBody.address() != null) {
+      location.setAddress(reqBody.address());
+    }
+    if (reqBody.locationDescription() != null) {
+      location.setLocationDescription(reqBody.locationDescription());
+    }
+
+    return locationRepository.save(location);
+  }
+
 }

@@ -11,8 +11,9 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
   // Gets All users
   // Page<Location> findAll(Pageable page); // Provided by default by JpaRepository
 
-    // Gets 1 user given the id
-    User findByLocationId(Long userId);
+    // Gets 1 location given the id
+    Location findByLocationId(Long locationId);
+
 
 //    // TODO: Address database lack of email storage, used in Oauth2
 //    User findByUsername(String email);

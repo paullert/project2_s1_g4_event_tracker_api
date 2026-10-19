@@ -52,12 +52,24 @@ public class User {
     return userId;
   }
 
+  public void setUserId(Long userId) {
+    this.userId = userId;
+  }
+
   public String getUsername() {
     return username;
   }
 
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String getGoogleSubject() {
+    return googleSubject;
+  }
+
+  public void setGoogleSubject(String googleSubject) {
+    this.googleSubject = googleSubject;
   }
 
   public UserRole getRole() {
@@ -72,7 +84,15 @@ public class User {
     return createdAt;
   }
 
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
   public LocalDateTime getUpdatedAt() {
     return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
   }
 }

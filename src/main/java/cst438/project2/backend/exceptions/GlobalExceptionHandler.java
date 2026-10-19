@@ -21,4 +21,11 @@ public class GlobalExceptionHandler {
         .status(HttpStatus.NOT_FOUND)
         .body(ex.getMessage());
   }
+
+  @ExceptionHandler(BadRequestException.class)
+  public ResponseEntity<String> handleBadRequestException(BadRequestException ex) {
+    return ResponseEntity
+        .status(HttpStatus.BAD_REQUEST)
+        .body(ex.getMessage());
+  }
 }

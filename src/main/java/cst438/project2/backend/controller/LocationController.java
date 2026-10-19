@@ -2,9 +2,11 @@ package cst438.project2.backend.controller;
 
 import cst438.project2.backend.dto.CreationResponse;
 import cst438.project2.backend.dto.location.LocationCreateRequest;
+import cst438.project2.backend.dto.location.LocationPatch;
 import cst438.project2.backend.dto.location.LocationResponse;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
+import cst438.project2.backend.repository.LocationRepository;
 import cst438.project2.backend.service.LocationService;
 import cst438.project2.backend.service.UserService;
 import org.springframework.data.domain.Page;
@@ -13,8 +15,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,6 +40,7 @@ public class LocationController {
   }
 
   @GetMapping
+  @ResponseStatus(HttpStatus.OK)
   public Page<LocationResponse> getLocations(
       @PageableDefault(
           size = 20,
@@ -47,7 +54,9 @@ public class LocationController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public CreationResponse<LocationResponse> createLocation(@RequestBody LocationCreateRequest locationReq, Authentication userAuth) {
+  public CreationResponse<LocationResponse> createLocation(
+      @RequestBody LocationCreateRequest locationReq,
+      Authentication userAuth) {
     User creator = userService.findUserFromAuthentication(userAuth);
     Location location = locationService.createLocation(locationReq, userAuth);
     return new CreationResponse<>(
@@ -56,5 +65,46 @@ public class LocationController {
         String.format("/api/v1/locations/%s", location.getLocationId()),
         LocationResponse.init(location)
     );
+  }
+
+  @GetMapping("/{locationId}")
+  public LocationResponse getLocation(@PathVariable Long locationId) {
+    return LocationResponse.init(locationService.getLocationById(locationId));
+  }
+
+  @PutMapping("/{locationId}")
+  public CreationResponse<LocationResponse> updateLocation(
+      @PathVariable Long locationId,
+      @RequestBody LocationCreateRequest locationReq
+  ) {
+    return null; // TODO: Implement put request
+  }
+
+  @PatchMapping("/{locationId}")
+  public CreationResponse<LocationResponse> patchLocation(
+      @PathVariable Long locationId,
+      @RequestBody LocationPatch locationPatch
+  ) {
+    Location location = locationService.getLocationById(locationId);
+    if (locationPatch.locationName() != null) {
+      location.setLocationName(locationPatch.locationName());
+    }
+    if (locationPatch.address() != null) {
+      location.setAddress(locationPatch.address());
+    }
+    if (locationPatch.locationDescription() != null) {
+      location.setLocationDescription(locationPatch.locationDescription());
+    }
+    location = locationService.saveLocation(location);
+    return new CreationResponse<>(
+        "Successful",
+        "Location Updated",
+        String.format("/api/v1/locations/%s", location.getLocationId()),
+        LocationResponse.init(location)
+    ); // TODO: Test patch request
+  }
+
+  @DeleteMapping("/{locationId}")
+  public void deleteLocation(@PathVariable Long locationId) {
   }
 }

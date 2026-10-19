@@ -1,15 +1,12 @@
 package cst438.project2.backend.service;
 
 import cst438.project2.backend.dto.location.LocationCreateRequest;
+import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
 import cst438.project2.backend.repository.LocationRepository;
-import cst438.project2.backend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +22,12 @@ public class LocationService {
     this.userService = userService;
   }
 
+  public Location getLocationById(Long locationId) {
+    return locationRepository.findById(locationId).orElseThrow(
+        () -> new NotFoundException(locationId, "Location")
+    );
+  }
+
   public Page<Location> getLocations(Pageable pageable) {
     if (pageable.getPageSize() <= 0) {
       throw new IllegalArgumentException("Size must be greater than 0");
@@ -32,8 +35,6 @@ public class LocationService {
     if (pageable.getPageNumber() < 0) {
       throw new IllegalArgumentException("Page must be greater than or equal to 0");
     }
-
-    System.out.println(pageable.getSort()); // TODO: remove
 
     return locationRepository.findAll(pageable);
   }
@@ -46,6 +47,10 @@ public class LocationService {
         locationReq.locationDescription(),
         creator
     );
+    return locationRepository.save(location);
+  }
+
+  public Location saveLocation(Location location) {
     return locationRepository.save(location);
   }
 }

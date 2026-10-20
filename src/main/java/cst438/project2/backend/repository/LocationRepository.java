@@ -16,10 +16,4 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
 
     // Gets 1 location given the id
     Location findByLocationId(Long locationId);
-
-    List<Invite> findByEventId(Long eventId);
-
-    Optional<Invite> findByIdAndUserId(Long inviteId, Long userId);
-
-    boolean existsByUserIdAndEventId(Long userId, Long eventId);
 }

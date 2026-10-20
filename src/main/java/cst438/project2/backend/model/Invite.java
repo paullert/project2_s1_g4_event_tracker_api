@@ -43,11 +43,11 @@ public class Invite {
         this.respondedAt = respondedAt;
     }
 
-    public Long getInviteId() {
+    public InviteId getInviteId() {
         return inviteId;
     }
 
-    public void setInviteId(Long inviteId) {
+    public void setInviteId(InviteId inviteId) {
         this.inviteId = inviteId;
     }
 

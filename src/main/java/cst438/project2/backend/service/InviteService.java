@@ -29,13 +29,21 @@ public class InviteService {
     return invites.stream().map(invite -> {
       Event event = invite.getEvent();
 
-      return new InviteResponse(
-          invite.getId(), event.getId(),
-          event.getEventName(), event.getEventDescription(),
-          event.getStartsOn(), invite.getStatus(),
-          invite.getInvitedAt()
-      );
-    }).toList();
+      return invites.map(InviteResponse::init);
+
+
+//      TODO: Review previous code compaired to new code
+//    List<Invite> invites = inviteRepository.findByUserId(userId);
+//    return invites.stream().map(invite -> {
+//      Event event = invite.getEvent();
+//
+//      return new InviteResponse(
+//          invite.getId(), event.getId(),
+//          event.getEventName(), event.getEventDescription(),
+//          event.getStartsOn(), invite.getStatus(),
+//          invite.getInvitedAt()
+//      );
+//    }).toList();
   }
 
   @Transactional(readOnly = true)
@@ -44,14 +52,14 @@ public class InviteService {
   }
 
   @Transactional
-  public Invite updateInvite(Long inviteId, Long userId, String status) {
-    Invite invite = inviteRepository.findById(inviteId)
-        .orElseThrow(() -> new ResponseStatusException(
-            HttpStatus.NOT_FOUND, "Invitation not found"
-        ));
+  public InviteResponse updateInvite(Long userId, Long eventId, String status) {
+    Invite invite = inviteRepository.findByEventIdAndUserId(userId, eventId);
+//        .orElseThrow(() -> new ResponseStatusException(
+//            HttpStatus.NOT_FOUND, "Invitation not found"
+//        ));
 
     //check to make sure invitations belonging to user
-    if (!invite.getUserId().equals(userId)) {
+    if (!invite.getUser().getUserId().equals(userId)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found");
     }
 
@@ -70,7 +78,8 @@ public class InviteService {
     invite.setStatus(status);
     invite.setRespondedAt(LocalDateTime.now());
 
-    return inviteRepository.save(invite);
+    invite = inviteRepository.save(invite);
+    return InviteResponse.init(invite);
   }
 
   //TODO: Delete this exception once we have the rest of the endpoints

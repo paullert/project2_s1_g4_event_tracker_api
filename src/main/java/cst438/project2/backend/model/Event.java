@@ -40,28 +40,70 @@ public class Event {
     public Event(){
     }
 
-    public Long getId(){
+    public Event(Long id, String eventName, String eventDescription, LocalDateTime startsOn, Long creatorId, LocalDateTime updatedAt, Long locationId) {
+        this.id = id;
+        this.eventName = eventName;
+        this.eventDescription = eventDescription;
+        this.startsOn = startsOn;
+        this.creatorId = creatorId;
+        this.updatedAt = updatedAt;
+        this.locationId = locationId;
+    }
+
+    public Long getId() {
         return id;
     }
 
-    public String getEventName(){
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getEventName() {
         return eventName;
     }
 
-    public String getEventDescription(){
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
+    }
+
+    public String getEventDescription() {
         return eventDescription;
     }
 
-    public LocalDateTime getStartsOn(){
+    public void setEventDescription(String eventDescription) {
+        this.eventDescription = eventDescription;
+    }
+
+    public LocalDateTime getStartsOn() {
         return startsOn;
     }
 
-    public Long getCreatorId(){
+    public void setStartsOn(LocalDateTime startsOn) {
+        this.startsOn = startsOn;
+    }
+
+    public Long getCreatorId() {
         return creatorId;
     }
 
-    public Long getLocationId(){
+    public void setCreatorId(Long creatorId) {
+        this.creatorId = creatorId;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Long getLocationId() {
         return locationId;
+    }
+
+    public void setLocationId(Long locationId) {
+        this.locationId = locationId;
     }
 }
 

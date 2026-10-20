@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,33 +18,34 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
-    private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-    public JwtAuthConverter(UserRepository userRepository) {
-      this.userRepository = userRepository;
+  public JwtAuthConverter(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
+
+  @Override
+  public AbstractAuthenticationToken convert(Jwt jwt) {
+    String googleSubject = jwt.getSubject();
+
+    User user = userRepository.findByGoogleSubject(googleSubject);
+
+    if (user == null) {
+      throw new BadCredentialsException("Google user is not registered");
     }
 
-    @Override
-    public AbstractAuthenticationToken convert(Jwt jwt) {
-      List<GrantedAuthority> authorities = new ArrayList<>();
+    List<GrantedAuthority> authorities = new ArrayList<>();
 
-      String email = jwt.getClaimAsString("email");
-
-      // TODO: Username = email for now, database doesnt have email field
-      User user = userRepository.findByUsername(email);
-
-      if (user != null && user.getRole() != null) {
-        authorities.add(
-            new SimpleGrantedAuthority(
-                "ROLE_" + user.getRole()
-            )
-        );
-      }
-
-      return new JwtAuthenticationToken(
-          jwt,
-          authorities,
-          jwt.getSubject()
+    if (user.getRole() != null) {
+      authorities.add(
+          new SimpleGrantedAuthority("ROLE_" + user.getRole())
       );
     }
+
+    return new JwtAuthenticationToken(
+        jwt,
+        authorities,
+        googleSubject
+    );
   }
+}

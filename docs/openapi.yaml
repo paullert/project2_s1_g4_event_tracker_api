@@ -236,7 +236,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InviteCreate'
+              $ref: '#/components/schemas/Invite'
       responses:
         '201':
           description: Invitation created
@@ -316,6 +316,132 @@ paths:
                 $ref: '#/components/schemas/LocationPage'
         '400':
           $ref: '#/components/responses/BadRequest'
+    post:
+      tags: [Locations, Admin]
+      operationId: createLocation
+      summary: Create a new location (admin only)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Location'
+      responses:
+        '201':
+          description: Location created
+          headers:
+            Location:
+              description: URL of the new location
+              schema:
+                type: string
+                example: /api/v1/locations/18
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/locations/{locationId}:
+    parameters:
+      - $ref: '#/components/parameters/LocationId'
+    get:
+      tags: [Locations, Unregistered]
+      operationId: getLocation
+      summary: View a location (public)
+      security: []
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '200':
+          description: The location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+    put:
+      tags: [ Locations, Admin ]
+      operationId: replaceLocation
+      summary: Replace a location (idempotent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Location'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '200':
+          description: The replaced event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [ Locations, Admin ]
+      operationId: updateLocation
+      summary: Change some fields of an location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationPatch'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '200':
+          description: The updated location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [ Locations, Admin ]
+      operationId: deleteLocation
+      summary: Delete a location (admin only)
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '204':
+          description: Deleted. No body.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 
   /api/v1/users/me:
     delete:
@@ -630,6 +756,14 @@ components:
         type: integer
         format: int64
         example: 7
+    LocationId:
+      name: locationId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 7
     Page:
       name: page
       in: query
@@ -758,6 +892,25 @@ components:
             - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the last edit to the location.
 
+    LocationPatch:
+      description: Body for PATCH /api/v1/locations/{locationId}.
+      type: object
+      minProperties: 1
+      properties:
+        locationId:
+          type: integer
+          format: int64
+          example: 7
+        locationName:
+          type: string
+          maxLength: 255
+        address:
+          type: integer
+          minimum: 1
+          example: 10
+        locationDesc:
+          type: string
+
     Invite:
       type: object
       required: [ userId, eventId, status, invitedAt ]
@@ -784,19 +937,6 @@ components:
             - $ref: '#/components/schemas/Date-Time'
           readOnly: true
           description: The date and time when the invite was accepted or declined.
-
-    InviteCreate:
-      type: object
-      required: [ userId ]
-      properties:
-        userId:
-          type: integer
-          format: int64
-          example: 7
-          description: The user being invited. The event is taken from the path.
-        message:
-          type: string
-          maxLength: 1000
 
     InviteResponsePatch:
       type: object
@@ -904,7 +1044,6 @@ components:
       type: string
       format: date-time
       example: 2022-01-01T00:00:00.000Z
-
 
     UserPatch:
       description: Body for PATCH /api/v1/users/{userId}.

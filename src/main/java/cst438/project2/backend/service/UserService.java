@@ -7,6 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,5 +31,15 @@ public class UserService {
       );
 
       return userRepository.findAll(pageable);
+    }
+
+    public User findUserFromAuthentication(Authentication authentication) {
+      if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
+        throw new IllegalArgumentException("Authentication is not a JWT");
+      }
+
+      String googleSubject = jwtAuth.getToken().getSubject();
+
+      return userRepository.findByGoogleSubject(googleSubject);
     }
 }

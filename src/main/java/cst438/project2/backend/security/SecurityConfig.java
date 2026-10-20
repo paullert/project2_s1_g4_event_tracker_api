@@ -32,7 +32,8 @@ public class SecurityConfig {
                 "/api/v1/events",
                 "/api/v1/events/*",
                 "/api/v1/events/{eventId}/totalAttendees",
-                "/api/v1/locations"
+                "/api/v1/locations",
+                "/api/v1/locations/*"
             ).permitAll()
             // .authenticated = needs auth
             .requestMatchers("/auth/me").authenticated()

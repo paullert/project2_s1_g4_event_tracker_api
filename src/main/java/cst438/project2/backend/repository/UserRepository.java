@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // TODO: Address database lack of email storage, used in Oauth2
     User findByUsername(String email);
+
+    User findByGoogleSubject(String googleSubject);
 }

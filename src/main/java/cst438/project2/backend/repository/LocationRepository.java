@@ -1,7 +1,10 @@
 package cst438.project2.backend.repository;
 
+import cst438.project2.backend.model.Invite;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 
@@ -14,7 +17,9 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
     // Gets 1 location given the id
     Location findByLocationId(Long locationId);
 
+    List<Invite> findByEventId(Long eventId);
 
-//    // TODO: Address database lack of email storage, used in Oauth2
-//    User findByUsername(String email);
+    Optional<Invite> findByIdAndUserId(Long inviteId, Long userId);
+
+    boolean existsByUserIdAndEventId(Long userId, Long eventId);
 }

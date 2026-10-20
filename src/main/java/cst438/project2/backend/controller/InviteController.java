@@ -1,5 +1,6 @@
 package cst438.project2.backend.controller;
 
+import cst438.project2.backend.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,9 +23,11 @@ import cst438.project2.backend.service.InviteService;
 public class InviteController {
 
   private final InviteService inviteService;
+  private final UserService userService;
 
-  public InviteController(InviteService inviteService) {
+  public InviteController(InviteService inviteService, UserService userService) {
     this.inviteService = inviteService;
+    this.userService = userService;
   }
 
   //TODO: Finish
@@ -50,7 +53,10 @@ public class InviteController {
   //TODO: Finish
   // Make admin role only
   @PatchMapping("{inviteId}")
-  public InviteResponse updateInvite(@PathVariable Long inviteId) {
+  public InviteResponse updateInvite(
+      @PathVariable Long inviteId,
+      @RequestBody(required = false) Object request
+  ) {
     throw new ResponseStatusException(
         HttpStatus.NOT_IMPLEMENTED,
         "Not implemented yet"
@@ -60,7 +66,7 @@ public class InviteController {
   //TODO: Finish
   // Make admin role only
   @DeleteMapping("{inviteId}")
-  public InviteResponse deleteInvite(@PathVariable Long inviteId) {
+  public void deleteInvite(@PathVariable Long inviteId) {
     throw new ResponseStatusException(
         HttpStatus.NOT_IMPLEMENTED,
         "Not implemented yet"
@@ -89,9 +95,9 @@ public class InviteController {
   //TODO: Finish
   // make user role only
   @GetMapping("me/{inviteId}")
-  public void getMyInvite(
+  public InviteResponse getMyInvite(
       @PathVariable Long inviteId,
-      @RequestBody InviteResponsePatch request
+      @RequestBody(required = false) Object request
   ) {
     throw new ResponseStatusException(
         HttpStatus.NOT_IMPLEMENTED,
@@ -103,7 +109,7 @@ public class InviteController {
   //TODO: Finish
   // make user role only
   @PatchMapping("me/{inviteId}")
-  public void respondToMyInvite(
+  public InviteResponse respondToMyInvite(
       @PathVariable Long inviteId,
       @RequestBody InviteResponsePatch request
   ) {
@@ -116,7 +122,7 @@ public class InviteController {
   //TODO: Finish
   // make admin and manager role only
   @GetMapping("events/{eventId}")
-  public void getEventInvites() {
+  public List<InviteResponse> getEventInvites(@PathVariable Long eventId) {
     throw new ResponseStatusException(
         HttpStatus.NOT_IMPLEMENTED,
         "Authentication is not implemented yet"
@@ -126,15 +132,10 @@ public class InviteController {
   //TODO: Finish
   // make admin and manager role only
   @PostMapping("events/{eventId}")
-  public void createEventInvite() {
-    throw new ResponseStatusException(
-        HttpStatus.NOT_IMPLEMENTED,
-        "Authentication is not implemented yet"
-    );
-  }
-
-  @PatchMapping("events/{eventId}")
-  public void respondToEventInvite() {
+  public InviteResponse createEventInvite(
+      @PathVariable Long eventId,
+      @RequestBody(required = false) Object request
+  ) {
     throw new ResponseStatusException(
         HttpStatus.NOT_IMPLEMENTED,
         "Authentication is not implemented yet"

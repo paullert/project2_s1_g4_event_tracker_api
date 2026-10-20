@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import cst438.project2.backend.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,7 +18,9 @@ public class InviteControllerTest {
     void respondToMyInviteRequiresAuthenticationIntegration() {
 
         InviteService inviteService = mock(InviteService.class);
-        InviteController controller = new InviteController(inviteService);
+        UserService userService = mock(UserService.class); // TODO: Update test to accommodate new endpoints
+
+        InviteController controller = new InviteController(inviteService, userService);
 
         InviteResponsePatch request =
                 new InviteResponsePatch("ACCEPTED");

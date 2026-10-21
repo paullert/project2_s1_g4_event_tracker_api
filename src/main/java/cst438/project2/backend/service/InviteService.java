@@ -1,35 +1,58 @@
 package cst438.project2.backend.service;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Arrays;
 
-import cst438.project2.backend.dto.InviteResponse;
-import cst438.project2.backend.dto.InviteResponsePatch;
+import cst438.project2.backend.dto.invite.InviteResponse;
+import cst438.project2.backend.dto.invite.InviteRequest;
+import cst438.project2.backend.dto.invite.MyInviteRequest;
 import cst438.project2.backend.model.Event;
 import cst438.project2.backend.model.Invite;
+import cst438.project2.backend.model.InviteId;
+import cst438.project2.backend.model.User;
+import cst438.project2.backend.repository.EventRepository;
 import cst438.project2.backend.repository.InviteRepository;
 
+import cst438.project2.backend.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+
+// TODO: review error handling with or else throw
 @Service
 public class InviteService {
 
-  private final InviteRepository inviteRepository;
+    private static final String[] VALID_STATUS = {"ACCEPTED", "DECLINED", "PENDING"};
 
-  public InviteService(InviteRepository inviteRepository) {
-    this.inviteRepository = inviteRepository;
-  }
+    private final InviteRepository inviteRepository;
+    private final UserService userService; // TODO: prob way to avoid this
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
 
-  @Transactional(readOnly = true)
-  public List<InviteResponse> getInvitesForUser(Long userId) {
-    List<Invite> invites = inviteRepository.findByUserId(userId);
-    return invites.stream().map(invite -> {
-      Event event = invite.getEvent();
+    public InviteService(InviteRepository inviteRepository, UserService userService, UserRepository userRepository, EventRepository eventRepository) {
+        this.inviteRepository = inviteRepository;
+        this.userService = userService;
+        this.userRepository = userRepository;
+        this.eventRepository = eventRepository;
+    }
 
-      return invites.map(InviteResponse::init);
+    @Transactional(readOnly = true)
+    public Page<InviteResponse> getInvitesForUser(Long userId, Pageable pageable) {
+        if (pageable.getPageSize() <= 0) {
+            throw new IllegalArgumentException("Size must be greater than 0");
+        }
+        if (pageable.getPageNumber() < 0) {
+            throw new IllegalArgumentException("Page must be greater than or equal to 0");
+        }
+
+        Page<Invite> invites = inviteRepository.findByUserId(userId, pageable);
+
+        return invites.map(InviteResponse::init);
 
 
 //      TODO: Review previous code compaired to new code
@@ -44,90 +67,180 @@ public class InviteService {
 //          invite.getInvitedAt()
 //      );
 //    }).toList();
-  }
+    }
 
-  @Transactional(readOnly = true)
-  public long getAcceptedAttendeeCount(Long eventId) {
-    return inviteRepository.countByEventIdAndStatus(eventId, "ACCEPTED");
-  }
+    // TODO: make it a proper json return
+    @Transactional(readOnly = true)
+    public long getAcceptedAttendeeCount(Long eventId) {
+        return inviteRepository.countByEventIdAndStatus(eventId, "ACCEPTED");
+    }
 
-  @Transactional
-  public InviteResponse updateInvite(Long userId, Long eventId, String status) {
-    Invite invite = inviteRepository.findByEventIdAndUserId(userId, eventId);
+    // Updates a present invite
+    // Finds invite based on body, must provide userId and eventId
+    //  Todo: Review problem caused by or else through
+    @Transactional
+    public InviteResponse updateInvite(InviteRequest request) {
+        Long userId = request.userId();
+        Long  eventId = request.eventId();
+        if (userId == null || eventId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing userId or eventId");
+        }
+        Invite invite = inviteRepository.findByEventIdAndUserId(userId, eventId);
 //        .orElseThrow(() -> new ResponseStatusException(
 //            HttpStatus.NOT_FOUND, "Invitation not found"
 //        ));
 
-    //check to make sure invitations belonging to user
-    if (!invite.getUser().getUserId().equals(userId)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found");
+
+        String status = request.status();
+        String message = request.message();
+
+        //check to make sure invitations belonging to user
+        if (!invite.getUser().getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found");
+        }
+
+        if (message == null ||  status == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invitation message or status missing");
+        }
+
+        // Checks if valid, throws err if not
+        isValidStatus(status);
+
+        //update invitation status
+        invite.setStatus(status);
+        invite.setRespondedAt(LocalDateTime.now());
+        invite.setMessage(message);
+
+        invite = inviteRepository.save(invite);
+        return InviteResponse.init(invite);
     }
 
-    if (!"ACCEPTED".equals(status) && !"DECLINED".equals(status)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-          "Invitation can only be ACCEPTED or DECLINED");
+
+    // Gets a page of invites
+    public Page<InviteResponse> getAllInvites(Pageable pageable) {
+        if (pageable.getPageSize() <= 0) {
+            throw new IllegalArgumentException("Size must be greater than 0");
+        }
+        if (pageable.getPageNumber() < 0) {
+            throw new IllegalArgumentException("Page must be greater than or equal to 0");
+        }
+        Page<Invite> invites = inviteRepository.findAll(pageable);
+        return invites.map(InviteResponse::init);
     }
 
-    //can only answer pending invitations so once youve made your decision you can't change
-    if (!"PENDING".equals(invite.getStatus())) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT,
-          "Invitation has already been answered");
+    public InviteResponse getInvite(Long userId, Long eventId) {
+        Invite invite = inviteRepository.findByEventIdAndUserId(userId, eventId);
+        return InviteResponse.init(invite);
     }
 
-    //update invitation status
-    invite.setStatus(status);
-    invite.setRespondedAt(LocalDateTime.now());
 
-    invite = inviteRepository.save(invite);
-    return InviteResponse.init(invite);
-  }
+    // Gets a page of a user's invites using auth as a reference
+    public Page<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
+        if (pageable.getPageSize() <= 0) {
+            throw new IllegalArgumentException("Size must be greater than 0");
+        }
+        if (pageable.getPageNumber() < 0) {
+            throw new IllegalArgumentException("Page must be greater than or equal to 0");
+        }
 
-  //TODO: Delete this exception once we have the rest of the endpoints
-  private ResponseStatusException notImplemented() {
-    return new ResponseStatusException(
-        HttpStatus.NOT_IMPLEMENTED,
-        "Not implemented yet"
-    );
-  }
+        User user = userService.findUserFromAuthentication(auth); // TODO: look into other solutions
 
-  public List<InviteResponse> getAllInvites() {
-    throw notImplemented();
-  }
+        Page<Invite> invites = inviteRepository.findByUserId(user.getUserId(), pageable);
+        return invites.map(InviteResponse::init);
+    }
 
-  public InviteResponse getInvite(Long inviteId) {
-    throw notImplemented();
-  }
+    // Gets a specific user's invite based on eventId and their auth
+    public InviteResponse getMyInvite(Authentication auth, Long eventId) {
+        User user = userService.findUserFromAuthentication(auth); // TODO: look into other solutions
+        Invite invite = inviteRepository.findByEventIdAndUserId(user.getUserId(), eventId);
+        return InviteResponse.init(invite);
+    }
 
-  public InviteResponse updateInvite(Long inviteId, Object request) {
-    throw notImplemented();
-  }
+    public InviteResponse respondToMyInvite(Authentication auth, Long eventId, MyInviteRequest request) {
+        User user = userService.findUserFromAuthentication(auth); // TODO: look into other solutions
+        Invite invite = inviteRepository.findByEventIdAndUserId(user.getUserId(), eventId);
 
-  public void deleteInvite(Long inviteId) {
-    throw notImplemented();
-  }
 
-  public List<InviteResponse> getMyInvites(Long userId) {
-    throw notImplemented();
-  }
+    }
 
-  public InviteResponse getMyInvite(Long userId, Long inviteId) {
-    throw notImplemented();
-  }
+    // Gets all invites given out from an event
+    public Page<InviteResponse> getEventInvites(Long eventId, Pageable pageable) {
+        Page<Invite> invites = inviteRepository.findByEventId(eventId, pageable);
+        return invites.map(InviteResponse::init);
+    }
 
-  public InviteResponse respondToMyInvite(
-      Long userId, Long inviteId, InviteResponsePatch request) {
-    throw notImplemented();
-  }
+    // Creates an invite tied to a user and event
+    //   must provide userId and eventId
+    public InviteResponse createInvite(InviteRequest request) {
+        User user = userRepository.findByUserId(request.userId());
+        Event event = eventRepository.findById(request.eventId()).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found")
+        );
+        Invite invite = new Invite(
+          new InviteId(user.getUserId(), event.getId()),
+                user,
+                event,
+                request.status(), // Defaults to pending if null
+                request.message(),
+                LocalDateTime.now(),
+                null
+        );
+        invite = inviteRepository.save(invite);
+        return InviteResponse.init(invite);
+    }
 
-  public List<InviteResponse> getEventInvites(Long eventId) {
-    throw notImplemented();
-  }
+    // Partially Updates an invite
+    //      Finds invite based on body, must provide userId and eventId
+    // TODO: Second Pass this
+    public InviteResponse patchInvite(InviteRequest request) {
+        Long userId = request.userId();
+        Long  eventId = request.eventId();
+        if (userId == null || eventId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing userId or eventId");
+        }
+        Invite invite = inviteRepository.findByEventIdAndUserId(userId, eventId);
+//        .orElseThrow(() -> new ResponseStatusException(
+//            HttpStatus.NOT_FOUND, "Invitation not found"
+//        ));
 
-  public InviteResponse createEventInvite(Long eventId, Object request) {
-    throw notImplemented();
-  }
 
-  public InviteResponse respondToEventInvite(Long eventId, Object request) {
-    throw notImplemented();
-  }
+        String status = request.status();
+        String message = request.message();
+
+        //check to make sure invitations belonging to user
+        if (!invite.getUser().getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found");
+        }
+
+        if (message != null){ // If msg is present...
+            invite.setMessage(message);
+        }
+
+        //update invitation status if present and valid
+        if (status != null && isValidStatus(status)) {
+
+
+            invite.setStatus(status);
+            invite.setRespondedAt(LocalDateTime.now());
+        }
+
+        invite = inviteRepository.save(invite);
+        return InviteResponse.init(invite);
+    }
+
+    // Checks if status matches one of our states, throw Err if not
+    public static boolean isValidStatus(String status){
+        if (!"ACCEPTED".equals(status) && !"DECLINED".equals(status)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invitation can only be ACCEPTED or DECLINED");
+        }
+
+        //can only answer pending invitations so once youve made your decision you can't change
+        if (!"PENDING".equals(status)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Invitation has already been answered");
+        }
+
+        return true;
+    }
 }

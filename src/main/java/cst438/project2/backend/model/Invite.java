@@ -1,29 +1,39 @@
 package cst438.project2.backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.cglib.core.Local;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "invites")
 public class Invite {
-    private String status;
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @Column(name = "user_id")
-    private Long userId;
+    // Since the id is composite, we need to use EmbeddedId
+    //   InviteId contains "userId" = "user_id" and "eventId" = "event_id"
+    @EmbeddedId
+    private InviteId inviteId;
 
-    @Column(name = "event_id")
-    private Long eventId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId("userId")
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId("eventId")
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
+
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", columnDefinition = "invite_response") // columnDefinition passes raw SQL to the database, in this case the enum type
+    private InviteStatus status;
+
+    @Column(name = "message")
+    private String message;
 
     @Column(name = "invited_at")
     private LocalDateTime invitedAt;
@@ -31,48 +41,71 @@ public class Invite {
     @Column(name = "responded_at")
     private LocalDateTime respondedAt;
 
-    public Invite(){
+    public Invite(){}
 
-    }
-
-    public void setStatus(String status){
+    public Invite(InviteId inviteId, User user, Event event, InviteStatus status, String message, LocalDateTime invitedAt, LocalDateTime respondedAt) {
+        this.inviteId = inviteId;
+        this.user = user;
+        this.event = event;
         this.status = status;
-    }
-
-    public void setRespondedAt(LocalDateTime respondedAt){
+        this.message = message;
+        this.invitedAt = invitedAt;
         this.respondedAt = respondedAt;
     }
 
-    public Long getId(){
-        return id;
+    public InviteId getInviteId() {
+        return inviteId;
     }
 
-    public Long getUserId(){
-        return userId;
+    public void setInviteId(InviteId inviteId) {
+        this.inviteId = inviteId;
     }
 
-    public Long getEventId(){
-        return eventId;
+    public User getUser() {
+        return user;
     }
 
-    public String getStatus(){
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
+    public InviteStatus getStatus() {
         return status;
     }
 
-    public LocalDateTime getInvitedAt(){
+    public void setStatus(InviteStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getInvitedAt() {
         return invitedAt;
     }
 
-    public LocalDateTime getRespondedAt(){
+    public void setInvitedAt(LocalDateTime invitedAt) {
+        this.invitedAt = invitedAt;
+    }
+
+    public LocalDateTime getRespondedAt() {
         return respondedAt;
     }
 
-    //tells the api that invites.event_id is referencing the events.id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", insertable = false, updatable = false)
-    private Event event;
+    public void setRespondedAt(LocalDateTime respondedAt) {
+        this.respondedAt = respondedAt;
+    }
 
-    public Event getEvent(){
-        return event;
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

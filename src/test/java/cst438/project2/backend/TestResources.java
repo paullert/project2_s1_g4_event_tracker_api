@@ -108,6 +108,7 @@ public final class TestResources {
     public static final Long[] INVITE_IDS = {4L, 99L};
     public static final Long[] USER_IDS = {7L, 9L};
     public static final Long[] EVENT_IDS = {1L};
+    public static final String[] MESSAGES = {"Test Message", "Another Test Message"};
     public static final String[] STATUSES = {"PENDING", "ACCEPTED", "DECLINED"};
     public static final String ACCEPTED_STATUS = "ACCEPTED";
     public static final String DECLINED_STATUS = "DECLINED";

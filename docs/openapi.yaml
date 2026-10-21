@@ -519,13 +519,14 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
-  /api/v1/invites/{inviteId}:
+  /api/v1/invites/users/{userId}/events/{eventId}:
     parameters:
-      - $ref: '#/components/parameters/InviteId'
+      - $ref: '#/components/parameters/UserId'
+      - $ref: '#/components/parameters/EventId'
     get:
       tags: [Invites, Admin]
       operationId: getInvite
-      summary: Get an invite (admin only)
+      summary: Get a specific invite using userId and eventId (admin only)
       description: Requires ADMIN.
       responses:
         '200':
@@ -629,9 +630,9 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/v1/invites/me/{inviteId}:
+  /api/v1/invites/me/{eventId}:
     parameters:
-      - $ref: '#/components/parameters/InviteId'
+      - $ref: '#/components/parameters/EventId'
     get:
       tags: [Users, Invites, Registered]
       operationId: getMyInvite
@@ -766,14 +767,6 @@ components:
         type: integer
         format: int64
         example: 42
-    InviteId:
-      name: inviteId
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-        example: 18
     UserId:
       name: userId
       in: path

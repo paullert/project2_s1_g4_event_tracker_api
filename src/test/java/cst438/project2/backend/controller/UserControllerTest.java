@@ -67,7 +67,7 @@ class UserControllerTest {
 
   @Test
   void updateUserDelegatesToServiceAndMapsResponse() {
-    UserRequest request = new UserRequest("updated-user", null, UserRole.ADMIN);
+    UserRequest request = new UserRequest("updated-user", null, UserRole.ADMIN, null);
     when(userService.updateUser(USER_ID, request)).thenReturn(user);
 
     UserResponse result = userController.updateUser(USER_ID, request);
@@ -85,12 +85,9 @@ class UserControllerTest {
   }
 
   @Test
-  void deleteMyAccountFindsAuthenticatedUserAndDeletesIt() {
-    when(userService.findUserFromAuthentication(authentication)).thenReturn(user);
-
+  void deleteMyAccountDelegatesToSelfDeletion() {
     userController.deleteMyAccount(authentication);
 
-    verify(userService).findUserFromAuthentication(authentication);
-    verify(userService).deleteUser(USER_ID);
+    verify(userService).deleteMe(authentication);
   }
 }

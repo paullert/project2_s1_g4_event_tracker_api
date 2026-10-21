@@ -85,7 +85,7 @@ class UserServiceTest {
     when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(userRepository.save(user)).thenReturn(user);
 
-    User result = userService.updateUser(USER_ID, new UserRequest(null, null, UserRole.ADMIN));
+    User result = userService.updateUser(USER_ID, new UserRequest(null, null, UserRole.ADMIN, null));
 
     assertEquals(UserRole.ADMIN, result.getRole());
     verify(userRepository).save(user);
@@ -93,8 +93,9 @@ class UserServiceTest {
 
   @Test
   void updateUserRequiresRole() {
-    assertThrows(IllegalArgumentException.class,
-        () -> userService.updateUser(USER_ID, new UserRequest(null, null, null)));
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> userService.updateUser(USER_ID, new UserRequest(null, null, null, null)));
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
 
     verify(userRepository, never()).findById(any());
     verify(userRepository, never()).save(any());

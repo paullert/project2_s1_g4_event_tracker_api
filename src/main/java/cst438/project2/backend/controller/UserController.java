@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/users")
 public class UserController {
 
 
@@ -35,6 +36,12 @@ public class UserController {
       Pageable pageable
   ) {
     return userService.getUsers(pageable);
+  }
+
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public UserResponse createUser(@RequestBody UserRequest request) {
+    return userService.createUser(request);
   }
 
   @GetMapping("/{userId}")
@@ -59,7 +66,6 @@ public class UserController {
   @DeleteMapping("/me")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteMyAccount(Authentication authentication) {
-    User user = userService.findUserFromAuthentication(authentication);
-    userService.deleteUser(user.getUserId());
+    userService.deleteMe(authentication);
   }
 }

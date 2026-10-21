@@ -6,7 +6,8 @@ import cst438.project2.backend.model.UserRole;
 public record UserRequest(
     String username,
     String email,
-    UserRole role
+    UserRole role,
+    String subject
 ) {
 
 }

@@ -9,6 +9,7 @@ public record UserResponse(
     Long userId,
     String username,
     String email,
+    String subject,
     UserRole role,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
@@ -18,6 +19,7 @@ public record UserResponse(
         user.getUserId(),
         user.getUsername(),
         user.getEmail(),
+        user.getGoogleSubject(),
         user.getRole(),
         user.getCreatedAt(),
         user.getUpdatedAt()

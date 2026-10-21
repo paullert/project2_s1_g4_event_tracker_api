@@ -76,13 +76,27 @@ public class UserService {
 
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
+    public UserResponse createUser(UserRequest request) {
+      User user = new User();
+      user.setUsername(request.username());
+      user.setEmail(request.email());
+      user.setRole(request.role());
+      user.setGoogleSubject(request.subject());
+      return UserResponse.init(userRepository.save(user));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public User updateUser(Long userId, UserRequest patch) {
       if (patch == null || patch.role() == null) {
-        throw new IllegalArgumentException("role is required");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing required fields: role");
       }
 
       User user = getUser(userId);
       user.setRole(patch.role());
+      user.setUsername(patch.username());
+      user.setEmail(patch.email());
+      user.setGoogleSubject(patch.subject());
       return userRepository.save(user);
     }
 
@@ -90,6 +104,13 @@ public class UserService {
     @Transactional
     public void deleteUser(Long userId) {
       User user = getUser(userId);
+      userRepository.delete(user);
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'MANAGER', 'ADMIN')")
+    @Transactional
+    public void deleteMe(Authentication authentication) {
+      User user = findUserFromAuthentication(authentication);
       userRepository.delete(user);
     }
 

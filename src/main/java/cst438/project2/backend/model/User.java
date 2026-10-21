@@ -48,6 +48,16 @@ public class User {
   public User() {
   }
 
+  public User(Long userId, String username, String googleSubject, UserRole role,
+      LocalDateTime createdAt, LocalDateTime updatedAt) {
+    this.userId = userId;
+    this.username = username;
+    this.googleSubject = googleSubject;
+    this.role = role;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+  }
+
   public Long getUserId() {
     return userId;
   }

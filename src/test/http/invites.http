@@ -2,18 +2,79 @@
 GET {{baseUrl}}/api/v1/invites
 Authorization: Bearer {{token}}
 
+### Get an Invite (Admin)
+GET {{baseUrl}}/api/v1/invites/users/10/events/1
+Authorization: Bearer {{token}}
+
+### Delete an Invite (Admin; returns 204 if present, 404 if missing)
+DELETE {{baseUrl}}/api/v1/invites/users/10/events/1
+Authorization: Bearer {{token}}
+
+### Get Event Invites (Admin)
+GET {{baseUrl}}/api/v1/invites/events/2
+Authorization: Bearer {{token}}
+
+### Get Event Invites (Manager w/o Acces)
+GET {{baseUrl}}/api/v1/invites/events/2
+Authorization: Bearer {{token}}
+
+### Get Event Invites (Manager w/ Access)
+GET {{baseUrl}}/api/v1/invites/events/2
+Authorization: Bearer {{token}}
+
+### Get User Invites (Admin)
+GET {{baseUrl}}/api/v1/invites/users/8
+Authorization: Bearer {{token}}
+
+### Create an Invite (Admin)
+POST {{baseUrl}}/api/v1/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Put an Invite (Admin)
+PUT {{baseUrl}}/api/v1/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ACCEPTED",
+  "userId": 6,
+  "message": "Editted Msg",
+  "eventId": 1
+}
+
+### Patch an Invite (Admin)
+
+{
+  "eventId": 1,
+  "message": "Test Inv",
+  "status": "PENDING",
+  "userId": 10
+}
+
+### Again
+POST {{baseUrl}}/api/v1/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "eventId": 2,
+  "message": "Test Inv (Delete this)",
+  "status": "PENDING",
+  "userId": 10
+}
+
 ### List My Invites
 GET {{baseUrl}}/api/v1/invites/me
 Authorization: Bearer {{token}}
 
 ### Get One of My Invites
-GET {{baseUrl}}/api/v1/invites/1
+GET {{baseUrl}}/api/v1/invites/me/2
 Authorization: Bearer {{token}}
 
-
-### Respond to an invite
+### Respond to my invite
 ### This currently returns 501 until authentication is implemented.
-PATCH {{baseUrl}}/api/v1/users/me/invites/1
+PATCH {{baseUrl}}/api/v1/invites/me/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
 

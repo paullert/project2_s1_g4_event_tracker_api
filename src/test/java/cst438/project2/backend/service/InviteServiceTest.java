@@ -87,17 +87,15 @@ class InviteServiceTest {
 
   @Test
   void getInviteReturnsMappedInvite() {
-    when(userService.findUserFromAuthentication(authentication)).thenReturn(user);
     Invite invite = invite(InviteStatus.PENDING, null);
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
-    assertEquals(EVENT_ID, inviteService.getInvite(authentication, USER_ID, EVENT_ID).eventId());
+    assertEquals(EVENT_ID, inviteService.getInvite(USER_ID, EVENT_ID).eventId());
   }
 
   @Test
   void getMissingInviteReturnsNotFound() {
-    when(userService.findUserFromAuthentication(authentication)).thenReturn(user);
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.empty());
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> inviteService.getInvite(authentication, USER_ID, EVENT_ID));
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> inviteService.getInvite(USER_ID, EVENT_ID));
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
   }
 
@@ -187,6 +185,20 @@ class InviteServiceTest {
     ResponseStatusException missingEvent = assertThrows(ResponseStatusException.class,
         () -> inviteService.createInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, null, null)));
     assertEquals(HttpStatus.NOT_FOUND, missingEvent.getStatusCode());
+  }
+
+  @Test
+  void createInviteRejectsExistingUserEventPairWithoutOverwritingIt() {
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+    when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
+    when(inviteRepository.existsByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(true);
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> inviteService.createInvite(authentication,
+            new InviteRequest(USER_ID, EVENT_ID, "PENDING", "Replacement")));
+
+    assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+    verify(inviteRepository, never()).save(any());
   }
 
   @Test

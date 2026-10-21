@@ -1,6 +1,7 @@
 package cst438.project2.backend.service;
 
 import cst438.project2.backend.model.InviteStatus;
+import cst438.project2.backend.model.UserRole;
 import java.time.LocalDateTime;
 
 import cst438.project2.backend.dto.invite.InviteResponse;
@@ -60,13 +61,9 @@ public class InviteService {
     return invites.map(InviteResponse::init);
   }
 
-  @PreAuthorize("hasAnyRole('USER', 'MANAGER', 'ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   @Transactional(readOnly = true)
-  public InviteResponse getInvite(Authentication auth, Long userId, Long eventId) {
-    User caller = userService.findUserFromAuthentication(auth);
-    if (!caller.getUserId().equals(userId)) {
-      ownership.requireCanManageEvent(caller, eventId);
-    }
+  public InviteResponse getInvite(Long userId, Long eventId) {
     Invite invite = findInvite(userId, eventId);
     return InviteResponse.init(invite);
   }
@@ -99,6 +96,7 @@ public class InviteService {
   public InviteResponse updateInvite(Authentication auth, InviteRequest request) {
     Long userId = request.userId();
     Long eventId = request.eventId();
+
     if (userId == null || eventId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing userId or eventId");
     }
@@ -119,11 +117,6 @@ public class InviteService {
     if (message == null || status == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
           "Invitation message or status missing");
-    }
-
-    if (!InviteStatus.PENDING.equals(invite.getStatus())) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT,
-          "Invitation has already been answered");
     }
 
     // Checks if valid, throws err if not
@@ -150,7 +143,7 @@ public class InviteService {
       throw new IllegalArgumentException("Page must be greater than or equal to 0");
     }
 
-    User user = userService.findUserFromAuthentication(auth); // TODO: look into other solutions
+    User user = userService.findUserFromAuthentication(auth);
 
     Page<Invite> invites = inviteRepository.findByUser_UserId(user.getUserId(), pageable);
     return invites.map(InviteResponse::init);
@@ -203,12 +196,15 @@ public class InviteService {
     Long userId = request.userId();
     Long eventId = request.eventId();
 
+    // Throws error if user is not an entrusted manager or admin
+    ownership.requireCanManageEvent(userService.findUserFromAuthentication(auth), eventId);
+
     if (userId == null || eventId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
           "Missing 1 or more required fields: userId, eventId");
     }
 
-    ownership.requireCanManageEvent(userService.findUserFromAuthentication(auth), eventId);
+
 
     User user = userRepository.findById(userId).orElseThrow(
         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
@@ -216,6 +212,11 @@ public class InviteService {
     Event event = eventRepository.findById(eventId).orElseThrow(
         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found")
     );
+
+    if (inviteRepository.existsByUser_UserIdAndEvent_Id(userId, eventId)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT,
+          "An invitation already exists for this user and event");
+    }
 
     InviteStatus status = request.status() == null ? InviteStatus.PENDING : InviteStatus.valueOf(request.status());
     Invite invite = new Invite(
@@ -270,6 +271,17 @@ public class InviteService {
 
     invite = inviteRepository.save(invite);
     return InviteResponse.init(invite);
+  }
+
+  @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+  @Transactional
+  public void deleteInvite(Authentication auth, Long userId, Long eventId) {
+    if (userId == null || eventId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing userId or eventId");
+    }
+    ownership.requireCanManageEvent(userService.findUserFromAuthentication(auth), eventId);
+    Invite invite = findInvite(userId, eventId);
+    inviteRepository.delete(invite);
   }
 
   // Checks if status matches one of our states, throw Err if not

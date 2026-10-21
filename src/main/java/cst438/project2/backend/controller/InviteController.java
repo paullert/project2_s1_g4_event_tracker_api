@@ -63,7 +63,6 @@ public class InviteController {
     }
 
     //TODO: Finish
-    // make admin and manager role only
     @GetMapping("events/{eventId}")
     public Page<InviteResponse> getEventInvites(Authentication auth, @PathVariable Long eventId, Pageable pageable) {
         return inviteService.getEventInvites(auth, eventId, pageable);
@@ -72,20 +71,20 @@ public class InviteController {
     //TODO: Finish
     @GetMapping("users/{userId}/events/{eventId}")
     public InviteResponse getUserEventInvite(
+            @PathVariable Long userId,
+            @PathVariable Long eventId
+    ) {
+        return inviteService.getInvite(userId, eventId);
+    }
+
+    @DeleteMapping("users/{userId}/events/{eventId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUserEventInvite(
             Authentication auth,
             @PathVariable Long userId,
             @PathVariable Long eventId
     ) {
-        return inviteService.getInvite(auth, userId, eventId);
-    }
-
-    // TODO: Finish
-    @DeleteMapping("users/{userId}/events/{eventId}")
-    public InviteResponse deleteUserEventInvite(
-            @PathVariable Long userId,
-            @PathVariable Long eventId
-    ) {
-        return null;
+        inviteService.deleteInvite(auth, userId, eventId);
     }
 
     //TODO: Finish
@@ -96,17 +95,12 @@ public class InviteController {
         return invites;
     }
 
-    //TODO: Finish
-    // make user role only
-    @GetMapping("me/{inviteId}")
+    @GetMapping("me/{eventId}")
     public InviteResponse getMyInvite(
-            @PathVariable Long inviteId,
-            @RequestBody(required = false) Object request
+        Authentication auth,
+        @PathVariable Long eventId
     ) {
-        throw new ResponseStatusException(
-                HttpStatus.NOT_IMPLEMENTED,
-                "Authentication is not implemented yet"
-        );
+      return inviteService.getMyInvite( auth, eventId);
     }
 
 

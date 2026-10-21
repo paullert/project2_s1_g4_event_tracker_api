@@ -156,7 +156,8 @@ class ManagerOwnershipSecurityTest {
     InviteRequest request = new InviteRequest(99L, EVENT_ID, "ACCEPTED", "Message");
     assertThrows(ResponseStatusException.class,
         () -> inviteService.getEventInvites(auth, EVENT_ID, PageRequest.of(0, 10)));
-    assertThrows(ResponseStatusException.class, () -> inviteService.getInvite(auth, 99L, EVENT_ID));
+    assertThrows(org.springframework.security.access.AccessDeniedException.class,
+        () -> inviteService.getInvite(99L, EVENT_ID));
     assertThrows(ResponseStatusException.class, () -> inviteService.createInvite(auth, request));
     assertThrows(ResponseStatusException.class, () -> inviteService.updateInvite(auth, request));
     assertThrows(ResponseStatusException.class, () -> inviteService.patchInvite(auth, request));
@@ -186,7 +187,7 @@ class ManagerOwnershipSecurityTest {
     Invite invite = new Invite(new InviteId(MANAGER_ID, EVENT_ID), recipient, event,
         InviteStatus.PENDING, null, START, null);
     when(invites.findByUser_UserIdAndEvent_Id(MANAGER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
-    assertEquals(EVENT_ID, inviteService.getInvite(auth, MANAGER_ID, EVENT_ID).eventId());
+    assertEquals(EVENT_ID, inviteService.getMyInvite(auth, EVENT_ID).eventId());
     verifyNoInteractions(managerEvents);
   }
 

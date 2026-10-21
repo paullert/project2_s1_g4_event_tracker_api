@@ -1,5 +1,6 @@
 package cst438.project2.backend.repository;
 import cst438.project2.backend.model.Invite;
+import cst438.project2.backend.model.InviteId;
 import cst438.project2.backend.model.InviteStatus;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +14,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 
-public interface InviteRepository extends JpaRepository<Invite, Long> {
+public interface InviteRepository extends JpaRepository<Invite, InviteId> {
     //the spring data jpa can automatically implement the method
     //gets all invitation records given the userid
     Page<Invite> findByUser_UserId(Long userId, Pageable pageable);

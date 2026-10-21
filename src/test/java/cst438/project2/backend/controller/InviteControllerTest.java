@@ -74,15 +74,6 @@ class InviteControllerTest {
   }
 
   @Test
-  void getInvitationBindsBothIdsAndAuthenticatedCaller() throws Exception {
-    when(invites.getInvite(any(), eq(7L), eq(20L))).thenReturn(response);
-    mvc.perform(get("/api/v1/invites/users/7/events/20")
-        .with(jwt().jwt(token -> token.subject("owner-subject"))))
-        .andExpect(status().isOk()).andExpect(jsonPath("$.eventName").value("Study session"));
-    verify(invites).getInvite(argThat(auth -> "owner-subject".equals(auth.getName())), eq(7L), eq(20L));
-  }
-
-  @Test
   void createInvitationReturns201AndBindsBody() throws Exception {
     var request = new InviteRequest(7L, 20L, "PENDING", "Welcome");
     when(invites.createInvite(any(), eq(request))).thenReturn(response);
@@ -115,7 +106,8 @@ class InviteControllerTest {
   @ParameterizedTest
   @CsvSource({"GET,/api/v1/invites", "POST,/api/v1/invites", "PUT,/api/v1/invites",
       "PATCH,/api/v1/invites", "GET,/api/v1/invites/users/7",
-      "GET,/api/v1/invites/events/20", "GET,/api/v1/invites/users/7/events/20"})
+      "GET,/api/v1/invites/events/20", "GET,/api/v1/invites/users/7/events/20",
+      "DELETE,/api/v1/invites/users/7/events/20"})
   void invitationRoutesRequireAuthentication(String method, String path) throws Exception {
     mvc.perform(request(HttpMethod.valueOf(method), path)
         .contentType(MediaType.APPLICATION_JSON).content(INVITATION))
@@ -125,10 +117,20 @@ class InviteControllerTest {
 
   @Test
   void missingInvitationReturns404() throws Exception {
-    when(invites.getInvite(any(), eq(7L), eq(20L))).thenThrow(
+    when(invites.getInvite(eq(7L), eq(20L))).thenThrow(
         new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found"));
     mvc.perform(get("/api/v1/invites/users/7/events/20").with(jwt()))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void deleteInvitationBindsBothIdsAndAuthenticatedCallerAndReturns204() throws Exception {
+    mvc.perform(delete("/api/v1/invites/users/7/events/20")
+            .with(jwt().jwt(token -> token.subject("manager-subject"))))
+        .andExpect(status().isNoContent())
+        .andExpect(content().string(""));
+    verify(invites).deleteInvite(
+        argThat(auth -> "manager-subject".equals(auth.getName())), eq(7L), eq(20L));
   }
 
   @Test
@@ -147,9 +149,19 @@ class InviteControllerTest {
     verifyNoInteractions(invites);
   }
 
+  @Test
+  void getMyInvitationPassesTheAuthenticatedCallerAndEventId() throws Exception {
+    when(invites.getMyInvite(any(), eq(20L))).thenReturn(response);
+    mvc.perform(get("/api/v1/invites/me/20")
+            .with(jwt().jwt(token -> token.subject("recipient-subject"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.eventId").value(20));
+    verify(invites).getMyInvite(
+        argThat(auth -> "recipient-subject".equals(auth.getName())), eq(20L));
+  }
+
   @ParameterizedTest
-  @CsvSource({"GET,/api/v1/invites/me", "GET,/api/v1/invites/me/20",
-      "PUT,/api/v1/invites/me/20"})
+  @CsvSource({"PUT,/api/v1/invites/me/20"})
   void unfinishedSelfInvitationRoutesExplicitlyReturn501(String method, String path) throws Exception {
     mvc.perform(request(HttpMethod.valueOf(method), path).with(jwt())
         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACCEPTED\"}"))

@@ -13,6 +13,7 @@ public class Invite {
     //   InviteId contains "userId" = "user_id" and "eventId" = "event_id"
     @EmbeddedId
     private InviteId inviteId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("userId")
     @JoinColumn(name = "course_id", nullable = false)
@@ -26,6 +27,9 @@ public class Invite {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "message")
+    private String message;
+
     @Column(name = "invited_at")
     private LocalDateTime invitedAt;
 
@@ -34,11 +38,12 @@ public class Invite {
 
     public Invite(){}
 
-    public Invite(Long inviteId, User user, Event event, String status, LocalDateTime invitedAt, LocalDateTime respondedAt) {
+    public Invite(InviteId inviteId, User user, Event event, String status, String message, LocalDateTime invitedAt, LocalDateTime respondedAt) {
         this.inviteId = inviteId;
         this.user = user;
         this.event = event;
         this.status = status;
+        this.message = message;
         this.invitedAt = invitedAt;
         this.respondedAt = respondedAt;
     }
@@ -89,5 +94,13 @@ public class Invite {
 
     public void setRespondedAt(LocalDateTime respondedAt) {
         this.respondedAt = respondedAt;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

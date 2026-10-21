@@ -175,10 +175,9 @@ public class InviteService {
   // Creates an invite tied to a user and event
   //   must provide userId and eventId
   public InviteResponse createInvite(InviteRequest request) {
-    User user = userRepository.findByUserId(request.userId());
-    if (user == null) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-    }
+    User user = userRepository.findById(request.userId()).orElseThrow(
+        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+    );
     Event event = eventRepository.findById(request.eventId()).orElseThrow(
         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found")
     );

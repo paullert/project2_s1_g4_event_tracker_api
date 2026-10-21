@@ -12,6 +12,8 @@ import cst438.project2.backend.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
@@ -53,7 +55,8 @@ class AuthTest {
 
   @Test
   void usersRouteForAdminReturns200() throws Exception {
-    when(userService.getUsers(0))
+    Pageable pageable = PageRequest.of(0, 10);
+    when(userService.getUsers(pageable))
         .thenReturn(Page.empty());
 
     mockMvc.perform(

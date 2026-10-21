@@ -28,7 +28,7 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
   public AbstractAuthenticationToken convert(Jwt jwt) {
     String googleSubject = jwt.getSubject();
 
-    User user = userRepository.findByGoogleSubject(googleSubject);
+    User user = userRepository.findByGoogleSubject(googleSubject).orElse(null);
 
     if (user == null) {
       throw new BadCredentialsException("Google user is not registered");

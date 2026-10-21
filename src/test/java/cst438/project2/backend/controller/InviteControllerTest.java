@@ -2,7 +2,7 @@ package cst438.project2.backend.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -21,8 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.core.Authentication;
 
 @ExtendWith(MockitoExtension.class)
 class InviteControllerTest {
@@ -117,29 +116,33 @@ class InviteControllerTest {
   }
 
   @Test
-  void getMyInvitesRequiresAuthenticationImplementation() {
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> controller.getMyInvites());
+  void getMyInvitesDelegatesToService() {
+    Authentication auth = mock(Authentication.class);
 
-    assertEquals(HttpStatus.NOT_IMPLEMENTED, exception.getStatusCode());
-    verifyNoInteractions(inviteService);
+    when(inviteService.getMyInvites(auth,pageable)).thenReturn(page);
+
+    assertEquals(page, controller.getMyInvites(auth,pageable));
+    verify(inviteService).getMyInvites(auth,pageable);
   }
 
   @Test
-  void getMyInviteRequiresAuthenticationImplementation() {
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> controller.getMyInvite(20L, null));
+  void getMyInviteDelegatesToService() {
+    Authentication auth = mock(Authentication.class);
 
-    assertEquals(HttpStatus.NOT_IMPLEMENTED, exception.getStatusCode());
-    verifyNoInteractions(inviteService);
+    when(inviteService.getMyInvite(auth,20L)).thenReturn(response);
+
+    assertEquals(response, controller.getMyInvite(20L, auth));
+    verify(inviteService).getMyInvite(auth,20L);
   }
 
   @Test
-  void respondToMyInviteRequiresAuthenticationImplementation() {
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> controller.respondToMyInvite(20L, new MyInviteRequest("ACCEPTED")));
+  void respondToMyInviteDelegatesToService() {
+    Authentication auth = mock(Authentication.class);
+    MyInviteRequest myRequest = new MyInviteRequest("ACCEPTED");
 
-    assertEquals(HttpStatus.NOT_IMPLEMENTED, exception.getStatusCode());
-    verifyNoInteractions(inviteService);
+    when(inviteService.respondToMyInvite(auth, 20L, myRequest)).thenReturn(response);
+
+    assertEquals(response, controller.respondToMyInvite(20L, myRequest, auth));
+    verify(inviteService).respondToMyInvite(auth, 20L, myRequest);
   }
 }

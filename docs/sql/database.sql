@@ -8,7 +8,6 @@ DROP TABLE IF EXISTS invites;
 DROP TABLE IF EXISTS manager_event;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS locations;
-DROP TABLE IF EXISTS archived_events;
 DROP TABLE IF EXISTS users;
 DROP TYPE IF EXISTS user_role;
 DROP TYPE IF EXISTS invite_response;
@@ -53,17 +52,6 @@ CREATE TABLE "manager_event"
     "event_id"   integer NOT NULL,
     "manager_id" integer NOT NULL,
     PRIMARY KEY ("event_id", "manager_id")
-);
-
-CREATE TABLE "archived_events"
-(
-    "arc_event_id"   integer PRIMARY KEY,
-    "arc_event_name" varchar(255),
-    "arc_event_date" timestamp,
-    "arc_event_size" integer,
-    "arc_event_desc" varchar(255),
-    "arc_event_loc"  varchar(255),
-    "happened_on"    timestamp
 );
 
 CREATE TABLE "invites"

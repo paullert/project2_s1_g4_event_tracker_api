@@ -89,7 +89,7 @@ public class InviteService {
   // TODO: make it a proper json return
   @Transactional(readOnly = true)
   public long getAcceptedAttendeeCount(Long eventId) {
-    return inviteRepository.countByEvent_IdAndStatus(eventId, "ACCEPTED");
+    return inviteRepository.countByEvent_IdAndStatus(eventId, InviteStatus.ACCEPTED);
   }
 
   // Updates a present invite

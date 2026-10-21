@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import cst438.project2.backend.controller.UserController;
 import cst438.project2.backend.security.JwtAuthConverter;
 import cst438.project2.backend.security.SecurityConfig;
+import cst438.project2.backend.repository.UserRepository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +23,14 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(UserController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, UserService.class})
 class AuthTest {
 
   @Autowired
   private MockMvc mockMvc;
 
   @MockitoBean
-  private UserService userService;
+  private UserRepository userRepository;
 
   @MockitoBean
   private JwtAuthConverter jwtAuthConverter;
@@ -39,14 +40,14 @@ class AuthTest {
 
   @Test
   void usersRouteWithoutTokenReturns401() throws Exception {
-    mockMvc.perform(get("/api/v1/users"))
+    mockMvc.perform(get("/users"))
         .andExpect(status().isUnauthorized());
   }
 
   @Test
   void usersRouteForRegularUserReturns403() throws Exception {
     mockMvc.perform(
-        get("/api/v1/users")
+        get("/users")
             .with(jwt().authorities(
                 new SimpleGrantedAuthority("ROLE_USER")
             ))
@@ -56,11 +57,11 @@ class AuthTest {
   @Test
   void usersRouteForAdminReturns200() throws Exception {
     Pageable pageable = PageRequest.of(0, 10);
-    when(userService.getUsers(pageable))
+    when(userRepository.findAll(pageable))
         .thenReturn(Page.empty());
 
     mockMvc.perform(
-        get("/api/v1/users")
+        get("/users").param("size", "10")
             .with(jwt().authorities(
                 new SimpleGrantedAuthority("ROLE_ADMIN")
             ))

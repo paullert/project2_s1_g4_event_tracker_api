@@ -1,5 +1,6 @@
 package cst438.project2.backend.repository;
 import cst438.project2.backend.model.Invite;
+import cst438.project2.backend.model.InviteStatus;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public interface InviteRepository extends JpaRepository<Invite, Long> {
     //gets all invitation records given the userid
     Page<Invite> findByUser_UserId(Long userId, Pageable pageable);
 
-    long countByEvent_IdAndStatus(Long eventId, String status);
+    long countByEvent_IdAndStatus(Long eventId, InviteStatus status);
 
     Page<Invite> findByEvent_Id(Long eventId, Pageable pageable);
 

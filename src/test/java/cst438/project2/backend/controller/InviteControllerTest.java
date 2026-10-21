@@ -1,147 +1,159 @@
 package cst438.project2.backend.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import cst438.project2.backend.dto.invite.InviteRequest;
 import cst438.project2.backend.dto.invite.InviteResponse;
-import cst438.project2.backend.dto.invite.MyInviteRequest;
+import cst438.project2.backend.security.JwtAuthConverter;
+import cst438.project2.backend.security.SecurityConfig;
 import cst438.project2.backend.service.InviteService;
 import cst438.project2.backend.service.UserService;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
+import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(InviteController.class)
+@Import(SecurityConfig.class)
 class InviteControllerTest {
+  @Autowired private MockMvc mvc;
+  @MockitoBean private InviteService invites;
+  @MockitoBean private UserService users;
+  @MockitoBean private JwtAuthConverter converter;
+  @MockitoBean private JwtDecoder decoder;
 
-  @Mock private InviteService inviteService;
-  @Mock private UserService userService;
-  @Mock private Authentication authentication;
+  private final InviteResponse response = new InviteResponse(
+      7L, 20L, "Study session", "Planning", "2026-11-01 12:00", "PENDING", null);
+  private static final String INVITATION = """
+      {"userId":7,"eventId":20,"status":"PENDING","message":"Welcome"}
+      """;
 
-  private InviteController controller;
-  private Pageable pageable;
-  private Page<InviteResponse> page;
-  private InviteResponse response;
-  private InviteRequest request;
-
-  @BeforeEach
-  void setUp() {
-    controller = new InviteController(inviteService, userService);
-    pageable = PageRequest.of(0, 10);
-    page = new PageImpl<>(java.util.List.of());
-    response = new InviteResponse(7L, 20L, "Test Event", "Description",
-        "2026-01-02 12:00", "PENDING", null);
-    request = new InviteRequest(7L, 20L, "PENDING", "Welcome");
+  @Test
+  void listInvitationsBindsPaginationAndSerializesPage() throws Exception {
+    var pageable = PageRequest.of(1, 2);
+    when(invites.getInvites(pageable)).thenReturn(new PageImpl<>(List.of(response), pageable, 3));
+    mvc.perform(get("/api/v1/invites?page=1&size=2").with(jwt()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].eventId").value(20))
+        .andExpect(jsonPath("$.totalElements").value(3));
+    verify(invites).getInvites(pageable);
   }
 
   @Test
-  void getAllInvitesDelegatesToService() {
-    when(inviteService.getInvites(pageable)).thenReturn(page);
-
-    assertEquals(page, controller.getAllInvites(pageable));
-
-    verify(inviteService).getInvites(pageable);
+  void listUserInvitationsBindsUserId() throws Exception {
+    when(invites.getInvitesForUser(eq(7L), any())).thenReturn(new PageImpl<>(List.of(response)));
+    mvc.perform(get("/api/v1/invites/users/7").with(jwt()))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].userId").value(7));
+    verify(invites).getInvitesForUser(eq(7L), any());
   }
 
   @Test
-  void createInviteDelegatesToService() {
-    when(inviteService.createInvite(authentication, request)).thenReturn(response);
-
-    assertEquals(response, controller.createInvite(authentication, request));
-
-    verify(inviteService).createInvite(authentication, request);
+  void listEventInvitationsPassesAuthenticatedCaller() throws Exception {
+    when(invites.getEventInvites(any(), eq(20L), any())).thenReturn(new PageImpl<>(List.of(response)));
+    mvc.perform(get("/api/v1/invites/events/20")
+        .with(jwt().jwt(token -> token.subject("manager-subject"))))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].status").value("PENDING"));
+    verify(invites).getEventInvites(argThat(auth -> "manager-subject".equals(auth.getName())),
+        eq(20L), any());
   }
 
   @Test
-  void putInviteDelegatesToService() {
-    when(inviteService.updateInvite(authentication, request)).thenReturn(response);
-
-    assertEquals(response, controller.putInvite(authentication, request));
-
-    verify(inviteService).updateInvite(authentication, request);
+  void getInvitationBindsBothIdsAndAuthenticatedCaller() throws Exception {
+    when(invites.getInvite(any(), eq(7L), eq(20L))).thenReturn(response);
+    mvc.perform(get("/api/v1/invites/users/7/events/20")
+        .with(jwt().jwt(token -> token.subject("owner-subject"))))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.eventName").value("Study session"));
+    verify(invites).getInvite(argThat(auth -> "owner-subject".equals(auth.getName())), eq(7L), eq(20L));
   }
 
   @Test
-  void patchInviteDelegatesToService() {
-    when(inviteService.patchInvite(authentication, request)).thenReturn(response);
-
-    assertEquals(response, controller.patchInvite(authentication, request));
-
-    verify(inviteService).patchInvite(authentication, request);
+  void createInvitationReturns201AndBindsBody() throws Exception {
+    var request = new InviteRequest(7L, 20L, "PENDING", "Welcome");
+    when(invites.createInvite(any(), eq(request))).thenReturn(response);
+    mvc.perform(post("/api/v1/invites").with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content(INVITATION))
+        .andExpect(status().isCreated()).andExpect(jsonPath("$.eventId").value(20));
+    verify(invites).createInvite(any(), eq(request));
   }
 
   @Test
-  void getUserInvitesDelegatesToService() {
-    when(inviteService.getInvitesForUser(7L, pageable)).thenReturn(page);
-
-    assertEquals(page, controller.getUserInvites(7L, pageable));
-
-    verify(inviteService).getInvitesForUser(7L, pageable);
+  void replaceInvitationPassesBodyToService() throws Exception {
+    var request = new InviteRequest(7L, 20L, "PENDING", "Welcome");
+    when(invites.updateInvite(any(), eq(request))).thenReturn(response);
+    mvc.perform(put("/api/v1/invites").with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content(INVITATION))
+        .andExpect(status().isOk());
+    verify(invites).updateInvite(any(), eq(request));
   }
 
   @Test
-  void getEventInvitesDelegatesToService() {
-    when(inviteService.getEventInvites(authentication, 20L, pageable)).thenReturn(page);
+  void patchInvitationPreservesUnspecifiedFieldsAsNull() throws Exception {
+    var request = new InviteRequest(7L, 20L, null, "Updated message");
+    when(invites.patchInvite(any(), eq(request))).thenReturn(response);
+    mvc.perform(patch("/api/v1/invites").with(jwt()).contentType(MediaType.APPLICATION_JSON)
+        .content("{\"userId\":7,\"eventId\":20,\"message\":\"Updated message\"}"))
+        .andExpect(status().isOk());
+    verify(invites).patchInvite(any(), eq(request));
+  }
 
-    assertEquals(page, controller.getEventInvites(authentication, 20L, pageable));
-
-    verify(inviteService).getEventInvites(authentication, 20L, pageable);
+  @ParameterizedTest
+  @CsvSource({"GET,/api/v1/invites", "POST,/api/v1/invites", "PUT,/api/v1/invites",
+      "PATCH,/api/v1/invites", "GET,/api/v1/invites/users/7",
+      "GET,/api/v1/invites/events/20", "GET,/api/v1/invites/users/7/events/20"})
+  void invitationRoutesRequireAuthentication(String method, String path) throws Exception {
+    mvc.perform(request(HttpMethod.valueOf(method), path)
+        .contentType(MediaType.APPLICATION_JSON).content(INVITATION))
+        .andExpect(status().isUnauthorized());
+    verifyNoInteractions(invites);
   }
 
   @Test
-  void getUserEventInviteDelegatesToService() {
-    when(inviteService.getInvite(authentication, 7L, 20L)).thenReturn(response);
-
-    assertEquals(response, controller.getUserEventInvite(authentication, 7L, 20L));
-
-    verify(inviteService).getInvite(authentication, 7L, 20L);
+  void missingInvitationReturns404() throws Exception {
+    when(invites.getInvite(any(), eq(7L), eq(20L))).thenThrow(
+        new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found"));
+    mvc.perform(get("/api/v1/invites/users/7/events/20").with(jwt()))
+        .andExpect(status().isNotFound());
   }
 
   @Test
-  void deleteUserEventInviteIsNotImplemented() {
-    assertNull(controller.deleteUserEventInvite(7L, 20L));
-
-    verifyNoInteractions(inviteService);
+  void ownershipDenialFromServiceReturns403() throws Exception {
+    when(invites.getEventInvites(any(), eq(20L), any())).thenThrow(
+        new ResponseStatusException(HttpStatus.FORBIDDEN, "Not assigned to event"));
+    mvc.perform(get("/api/v1/invites/events/20").with(jwt()))
+        .andExpect(status().isForbidden());
   }
 
   @Test
-  void getMyInvitesRequiresAuthenticationImplementation() {
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> controller.getMyInvites());
-
-    assertEquals(HttpStatus.NOT_IMPLEMENTED, exception.getStatusCode());
-    verifyNoInteractions(inviteService);
+  void malformedJsonReturns400BeforeCallingService() throws Exception {
+    mvc.perform(post("/api/v1/invites").with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content("{broken"))
+        .andExpect(status().isBadRequest());
+    verifyNoInteractions(invites);
   }
 
-  @Test
-  void getMyInviteRequiresAuthenticationImplementation() {
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> controller.getMyInvite(20L, null));
-
-    assertEquals(HttpStatus.NOT_IMPLEMENTED, exception.getStatusCode());
-    verifyNoInteractions(inviteService);
-  }
-
-  @Test
-  void respondToMyInviteRequiresAuthenticationImplementation() {
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> controller.respondToMyInvite(20L, new MyInviteRequest("ACCEPTED")));
-
-    assertEquals(HttpStatus.NOT_IMPLEMENTED, exception.getStatusCode());
-    verifyNoInteractions(inviteService);
+  @ParameterizedTest
+  @CsvSource({"GET,/api/v1/invites/me", "GET,/api/v1/invites/me/20",
+      "PUT,/api/v1/invites/me/20"})
+  void unfinishedSelfInvitationRoutesExplicitlyReturn501(String method, String path) throws Exception {
+    mvc.perform(request(HttpMethod.valueOf(method), path).with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACCEPTED\"}"))
+        .andExpect(status().isNotImplemented());
+    verifyNoInteractions(invites);
   }
 }

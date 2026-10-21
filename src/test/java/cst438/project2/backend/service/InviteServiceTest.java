@@ -46,9 +46,9 @@ class InviteServiceTest {
 
   @Test
   void getAcceptedAttendeeCountUsesAcceptedStatus() {
-    when(inviteRepository.countByEvent_IdAndStatus(EVENT_ID, "ACCEPTED")).thenReturn(2L);
+    when(inviteRepository.countByEvent_IdAndStatus(EVENT_ID, InviteStatus.ACCEPTED)).thenReturn(2L);
     assertEquals(2L, inviteService.getAcceptedAttendeeCount(EVENT_ID));
-    verify(inviteRepository).countByEvent_IdAndStatus(EVENT_ID, "ACCEPTED");
+    verify(inviteRepository).countByEvent_IdAndStatus(EVENT_ID, InviteStatus.ACCEPTED);
   }
 
   @Test

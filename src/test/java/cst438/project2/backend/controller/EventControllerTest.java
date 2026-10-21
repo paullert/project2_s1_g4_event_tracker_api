@@ -7,9 +7,17 @@ import static cst438.project2.backend.TestResources.ErrorValues.constructNotFoun
 import static cst438.project2.backend.TestResources.EventValues.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,10 +36,16 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpMethod;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import java.util.List;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -114,6 +128,85 @@ class EventControllerTest {
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))))
         .andExpect(jsonPath("$.creatorId").value(creatorId))
         .andExpect(jsonPath("$.locationId").value(locationId));
+  }
+
+  @Test
+  void listEventsBindsPaginationAndReturnsPage() throws Exception {
+    var pageable = PageRequest.of(0, 2);
+    when(eventService.getEvents(pageable)).thenReturn(
+        new PageImpl<>(List.of(EventResponse.init(event)), pageable, 1));
+    mockMvc.perform(get("/api/v1/events?size=2").with(jwt()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].eventId").value(eventId))
+        .andExpect(jsonPath("$.totalElements").value(1));
+    verify(eventService).getEvents(pageable);
+  }
+
+  @Test
+  void createEventBindsJsonAndPassesAuthenticatedCaller() throws Exception {
+    when(eventService.createEvent(any(), any())).thenReturn(EventResponse.init(event));
+    mockMvc.perform(post("/api/v1/events")
+        .with(jwt().jwt(token -> token.subject("manager-subject")))
+        .contentType(MediaType.APPLICATION_JSON).content("""
+            {"eventName":"New event","eventDescription":"Planning",
+             "startsOn":"2026-11-01T12:00:00","locationId":1}
+            """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.eventId").value(eventId));
+    verify(eventService).createEvent(
+        argThat(auth -> "manager-subject".equals(auth.getName())),
+        eq(new EventRequest("New event", "Planning", LocalDateTime.of(2026, 11, 1, 12, 0), null, 1L)));
+  }
+
+  @Test
+  void patchEventPassesOnlySuppliedFields() throws Exception {
+    when(eventService.patchEvent(any(), eq(eventId), any())).thenReturn(EventResponse.init(event));
+    mockMvc.perform(patch("/api/v1/events/" + eventId).with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content("{\"eventName\":\"Renamed\"}"))
+        .andExpect(status().isOk());
+    verify(eventService).patchEvent(any(), eq(eventId),
+        eq(new EventRequest("Renamed", null, null, null, null)));
+  }
+
+  @Test
+  void deleteEventPassesPathIdAndAuthentication() throws Exception {
+    mockMvc.perform(delete("/api/v1/events/" + eventId)
+        .with(jwt().jwt(token -> token.subject("manager-subject"))))
+        .andExpect(status().isOk()).andExpect(content().string(""));
+    verify(eventService).deleteEvent(argThat(auth -> "manager-subject".equals(auth.getName())), eq(eventId));
+  }
+
+  @ParameterizedTest
+  @ValueSource(longs = {0, 12})
+  void attendeeCountIsPublicAndReturnsNumericJson(long count) throws Exception {
+    when(inviteService.getAcceptedAttendeeCount(eventId)).thenReturn(count);
+    mockMvc.perform(get("/api/v1/events/" + eventId + "/totalAttendees"))
+        .andExpect(status().isOk()).andExpect(content().string(Long.toString(count)));
+    verify(inviteService).getAcceptedAttendeeCount(eventId);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"POST", "PUT", "PATCH", "DELETE"})
+  void eventWritesRequireAuthentication(String method) throws Exception {
+    String path = method.equals("POST") ? "/api/v1/events" : "/api/v1/events/7";
+    mockMvc.perform(request(HttpMethod.valueOf(method), path)
+        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isUnauthorized());
+    verifyNoInteractions(eventService);
+  }
+
+  @Test
+  void createEventRequiresRequestBody() throws Exception {
+    mockMvc.perform(post("/api/v1/events").with(jwt()).contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
+    verifyNoInteractions(eventService);
+  }
+
+  @Test
+  void nonNumericEventIdReturns400() throws Exception {
+    mockMvc.perform(get("/api/v1/events/not-a-number").with(jwt()))
+        .andExpect(status().isBadRequest());
+    verifyNoInteractions(eventService);
   }
 
   @Test

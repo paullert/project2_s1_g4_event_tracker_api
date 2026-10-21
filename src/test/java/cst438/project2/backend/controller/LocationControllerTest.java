@@ -3,9 +3,16 @@ package cst438.project2.backend.controller;
 import static cst438.project2.backend.TestResources.Dates.NOW;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -13,6 +20,7 @@ import static cst438.project2.backend.TestResources.LocationValues.*;
 import static cst438.project2.backend.TestResources.ErrorValues.*;
 
 import cst438.project2.backend.dto.location.LocationCreate;
+import cst438.project2.backend.dto.location.LocationPatch;
 import cst438.project2.backend.exceptions.BadRequestException;
 import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Location;
@@ -23,10 +31,17 @@ import cst438.project2.backend.service.UserService;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpMethod;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import java.util.List;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -81,6 +96,69 @@ class LocationControllerTest {
         .andExpect(jsonPath("$.locationName").value(name))
         .andExpect(jsonPath("$.address").value(address))
         .andExpect(jsonPath("$.locationDescription").value(description));
+  }
+
+  @Test
+  void listLocationsIsPublicAndUsesConfiguredDefaultSort() throws Exception {
+    var pageable = PageRequest.of(0, 20, Sort.by("updatedAt").descending());
+    when(locationService.getLocations(pageable)).thenReturn(new PageImpl<>(List.of(location)));
+    mockMvc.perform(get("/api/v1/locations"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].locationId").value(id));
+    verify(locationService).getLocations(pageable);
+  }
+
+  @Test
+  void createLocationReturns201WithResponseEnvelope() throws Exception {
+    when(locationService.createLocation(any(), any())).thenReturn(location);
+    mockMvc.perform(post("/api/v1/locations").with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content("""
+            {"locationName":"Office","address":"10 Main Street","locationDescription":"Meeting room"}
+            """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.message").value("Location Created"))
+        .andExpect(jsonPath("$.location").value("/api/v1/locations/" + id))
+        .andExpect(jsonPath("$.object.locationId").value(id));
+    verify(locationService).createLocation(eq(new LocationCreate("Office", "10 Main Street", "Meeting room")), any());
+  }
+
+  @Test
+  void patchLocationBindsOnlySuppliedFields() throws Exception {
+    when(locationService.getLocationById(id)).thenReturn(location);
+    when(locationService.patchLocation(eq(location), any())).thenReturn(location);
+    mockMvc.perform(patch("/api/v1/locations/" + id).with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content("{\"address\":\"20 Main Street\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("Location Updated (Patch)"));
+    verify(locationService).patchLocation(location, new LocationPatch(null, "20 Main Street", null));
+  }
+
+  @Test
+  void deleteLocationReturnsDeletionEnvelope() throws Exception {
+    when(locationService.getLocationById(id)).thenReturn(location);
+    mockMvc.perform(delete("/api/v1/locations/" + id).with(jwt()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("Deleted Location"))
+        .andExpect(jsonPath("$.object.locationId").value(id));
+    verify(locationService).deleteLocation(location);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"POST", "PUT", "PATCH", "DELETE"})
+  void locationWritesRequireAuthentication(String method) throws Exception {
+    String path = method.equals("POST") ? "/api/v1/locations" : "/api/v1/locations/7";
+    mockMvc.perform(request(HttpMethod.valueOf(method), path)
+        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isUnauthorized());
+    verifyNoInteractions(locationService, userService);
+  }
+
+  @Test
+  void malformedLocationJsonReturns400() throws Exception {
+    mockMvc.perform(post("/api/v1/locations").with(jwt())
+        .contentType(MediaType.APPLICATION_JSON).content("{broken"))
+        .andExpect(status().isBadRequest());
+    verifyNoInteractions(locationService, userService);
   }
 
   @Test

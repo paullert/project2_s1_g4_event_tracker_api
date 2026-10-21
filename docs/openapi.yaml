@@ -200,67 +200,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /api/v1/events/{eventId}/invites:
-    parameters:
-      - $ref: '#/components/parameters/EventId'
-    get:
-      tags: [Invites, Manager, Admin]
-      operationId: listEventInvites
-      summary: List invites for an event (manager or admin)
-      description: Lists all invitations associated with the event. Requires MANAGER or ADMIN.
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '200':
-          description: The invites to the specified event
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvitePage'
-    post:
-      tags: [Invites, Manager, Admin]
-      operationId: createEventInvite
-      summary: Invite a user to an event (manager or admin)
-      description: Creates an invitation for a user. Requires MANAGER or ADMIN.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Invite'
-      responses:
-        '201':
-          description: Invitation created
-          headers:
-            Location:
-              description: URL of the new invitation
-              schema:
-                type: string
-                example: /api/v1/invites/18
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Invite'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
   /api/v1/events/{eventId}/totalAttendees:
     parameters:
       - $ref: '#/components/parameters/EventId'
@@ -457,59 +396,6 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/v1/users/me/invites:
-    get:
-      tags: [ Users, Invites ]
-      operationId: listMyInvites
-      summary: Get invites to events I'm invited to
-      description: Returns invitations addressed to the authenticated user.
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '200':
-          description: The authenticated user's invitations
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvitePage'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/v1/users/me/invites/{inviteId}:
-    parameters:
-      - $ref: '#/components/parameters/InviteId'
-    patch:
-      tags: [ Users, Invites, Registered ]
-      operationId: respondToMyInvite
-      summary: Accept or decline my invitation
-      description: The authenticated user may accept or decline an invitation addressed to them.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InviteResponsePatch'
-      responses:
-        '200':
-          description: The updated invitation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Invite'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
   /api/v1/users:
     get:
       tags: [Admin]
@@ -610,33 +496,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /api/v1/users/{userId}/invites:
-    parameters:
-      - $ref: '#/components/parameters/UserId'
-    get:
-      tags: [Invites, Admin]
-      operationId: listUserInvites
-      summary: List a user's invites (admin only)
-      description: Lists invitations addressed to the specified user. Requires ADMIN.
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: The user's invitations
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvitePage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /api/v1/invites:
     get:
       tags: [Invites, Admin]
@@ -722,6 +581,173 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/v1/invites/users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [ Invites, Admin ]
+      operationId: listUserInvites
+      summary: List a user's invites (admin only)
+      description: Lists invitations addressed to the specified user. Requires ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: The user's invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/invites/me:
+    get:
+      tags: [ Users, Invites ]
+      operationId: listMyInvites
+      summary: Get invites to events I'm invited to
+      description: Returns invitations addressed to the authenticated user.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '200':
+          description: The authenticated user's invitations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/invites/me/{inviteId}:
+    parameters:
+      - $ref: '#/components/parameters/InviteId'
+    get:
+      tags: [Users, Invites, Registered]
+      operationId: getMyInvite
+      summary: Get an invitation I've recieved
+      description: The authenticated user may view their own invitation.
+      requestBody: 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invite'
+      responses:
+        '200':
+          description: The event invite
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        
+    patch:
+      tags: [ Users, Invites, Registered ]
+      operationId: respondToMyInvite
+      summary: Accept or decline my invitation
+      description: The authenticated user may accept or decline an invitation addressed to them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteResponsePatch'
+      responses:
+        '200':
+          description: The updated invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/invites/events/{eventId}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [ Invites, Manager, Admin ]
+      operationId: listEventInvites
+      summary: List invites for an event (manager or admin)
+      description: Lists all invitations associated with the event. Requires MANAGER or ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '200':
+          description: The invites to the specified event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePage'
+    post:
+      tags: [ Invites, Manager, Admin ]
+      operationId: createEventInvite
+      summary: Invite a user to an event (manager or admin)
+      description: Creates an invitation for a user. Requires MANAGER or ADMIN.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invite'
+      responses:
+        '201':
+          description: Invitation created
+          headers:
+            Location:
+              description: URL of the new invitation
+              schema:
+                type: string
+                example: /api/v1/invites/18
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
 components:
   securitySchemes:

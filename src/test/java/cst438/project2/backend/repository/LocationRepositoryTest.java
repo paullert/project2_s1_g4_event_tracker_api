@@ -3,6 +3,8 @@ package cst438.project2.backend.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static cst438.project2.backend.TestResources.LocationValues.*;
+import static cst438.project2.backend.TestResources.UserValues.*;
 
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
@@ -34,17 +36,24 @@ class LocationRepositoryTest {
 
   @Test
   void savesAndFindsLocation() {
+    String locationName = LOCATION_NAMES[0];
+    String address = ADDRESSES[0];
+    String description = LOCATION_DESCRIPTIONS[0];
+
     User creator = new User();
-    creator.setUsername("testuser");
-    creator.setGoogleSubject("1234567890");
+    creator.setUsername(USERNAMES[0]);
+    creator.setGoogleSubject(GOOGLE_SUBJECTS[0]);
 
     creator = userRepository.save(creator);
 
     Location location = new Location(
-        "Main Office",
-        "10 Main Street",
-        "Primary office",
-        creator
+        null,
+        locationName,
+        address,
+        description,
+        creator,
+        null,
+        null
     );
 
     Location saved = locationRepository.save(location);
@@ -53,6 +62,6 @@ class LocationRepositoryTest {
         locationRepository.findById(saved.getLocationId());
 
     assertTrue(result.isPresent());
-    assertEquals("Main Office", result.get().getLocationName());
+    assertEquals(locationName, result.get().getLocationName());
   }
 }

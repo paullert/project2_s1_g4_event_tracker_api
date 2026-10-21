@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import cst438.project2.backend.dto.invite.EventInviteRequest;
 
 @ExtendWith(MockitoExtension.class)
 class InviteControllerTest {
@@ -107,6 +108,30 @@ class InviteControllerTest {
     assertEquals(response, controller.getUserEventInvite(7L, 20L));
 
     verify(inviteService).getInvite(7L, 20L);
+  }
+
+  @Test
+  void createEventInvitesDelegatesToService() {
+    // creates a request containing multiple users
+    EventInviteRequest request = new EventInviteRequest(
+            java.util.List.of(7L, 8L)
+    );
+
+    // creates the expected service response
+    java.util.List<InviteResponse> responses = java.util.List.of(response);
+
+    // connects the controller call to the service response
+    when(inviteService.createEventInvites(20L, request.userIds()))
+            .thenReturn(responses);
+
+    // confirms that the controller returns the service response
+    assertEquals(
+            responses,
+            controller.createEventInvites(20L, request)
+    );
+
+    // confirms that the service received the event and user ids
+    verify(inviteService).createEventInvites(20L, request.userIds());
   }
 
   @Test

@@ -19,6 +19,7 @@ import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class InviteServiceTest {
@@ -164,7 +165,7 @@ class InviteServiceTest {
 
   @Test
   void createInviteDefaultsStatusToPending() {
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(user);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
     when(inviteRepository.save(any(Invite.class))).thenAnswer(invocation -> invocation.getArgument(0));
     InviteResponse result = inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, "Welcome"));
@@ -175,11 +176,11 @@ class InviteServiceTest {
 
   @Test
   void createInviteReturnsNotFoundForMissingUserOrEvent() {
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(null);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
     ResponseStatusException missingUser = assertThrows(ResponseStatusException.class,
         () -> inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, null)));
     assertEquals(HttpStatus.NOT_FOUND, missingUser.getStatusCode());
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(user);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.empty());
     ResponseStatusException missingEvent = assertThrows(ResponseStatusException.class,
         () -> inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, null)));
@@ -218,6 +219,50 @@ class InviteServiceTest {
     assertTrue(InviteService.isValidStatus("DECLINED"));
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> InviteService.isValidStatus("PENDING"));
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+  }
+
+  @Test
+  void createEventInvitesCreatesPendingInvitesForMultipleUsers() {
+    // creates a second user for the multiple user test
+    User secondUser = new User(
+            8L,
+            "second-user",
+            "second-google-subject",
+            null,
+            null,
+            null
+    );
+
+    // confirms that the event exists
+    when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
+
+    // confirms that both users exist
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+    when(userRepository.findById(8L)).thenReturn(Optional.of(secondUser));
+
+    // confirms that neither user already has an invite
+    when(inviteRepository.existsByUser_UserIdAndEvent_Id(anyLong(), eq(EVENT_ID)))
+            .thenReturn(false);
+
+    // returns the invites that were saved
+    when(inviteRepository.saveAll(any()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+    // creates invites for both users
+    List<InviteResponse> result = inviteService.createEventInvites(
+            EVENT_ID,
+            List.of(USER_ID, 8L)
+    );
+
+    // confirms that two invites were created
+    assertEquals(2, result.size());
+
+    // confirms that both invites start as pending
+    assertEquals("PENDING", result.get(0).status());
+    assertEquals("PENDING", result.get(1).status());
+
+    // confirms that the invites were saved
+    verify(inviteRepository).saveAll(any());
   }
 
   private Invite invite(InviteStatus status, String message) {

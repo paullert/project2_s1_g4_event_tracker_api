@@ -7,9 +7,10 @@ import cst438.project2.backend.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import cst438.project2.backend.model.InviteId;
 
 
-public interface InviteRepository extends JpaRepository<Invite, Long> {
+public interface InviteRepository extends JpaRepository<Invite, InviteId> {
     //the spring data jpa can automatically implement the method
     //gets all invitation records given the userid
     Page<Invite> findByUser_UserId(Long userId, Pageable pageable);

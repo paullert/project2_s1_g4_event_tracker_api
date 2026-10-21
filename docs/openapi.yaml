@@ -717,28 +717,24 @@ paths:
                 $ref: '#/components/schemas/InvitePage'
     post:
       tags: [ Invites, Manager, Admin ]
-      operationId: createEventInvite
-      summary: Invite a user to an event (manager or admin)
-      description: Creates an invitation for a user. Requires MANAGER or ADMIN.
+      operationId: createEventInvites
+      summary: Invite multiple users to an event
+      description: Creates pending invitations for multiple users
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Invite'
+              $ref: '#/components/schemas/EventInviteRequest'
       responses:
         '201':
-          description: Invitation created
-          headers:
-            Location:
-              description: URL of the new invitation
-              schema:
-                type: string
-                example: /api/v1/invites/18
+          description: Invitations created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Invite'
+                type: array
+                items:
+                  $ref: '#/components/schemas/InviteResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -929,6 +925,52 @@ components:
           example: 10
         locationDesc:
           type: string
+
+    EventInviteRequest:
+      type: object
+      required: [ userIds ]
+      properties:
+        userIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: integer
+            format: int64
+          example: [ 7, 8, 9 ]
+
+    InviteResponse:
+      type: object
+      required:
+        - userId
+        - eventId
+        - eventName
+        - eventDescription
+        - startsOn
+        - status
+        - invitedAt
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 7
+        eventId:
+          type: integer
+          format: int64
+          example: 20
+        eventName:
+          type: string
+          example: team meeting
+        eventDescription:
+          type: string
+          example: project planning meeting
+        startsOn:
+          type: string
+          example: 2026-01-02 12:00
+        status:
+          $ref: '#/components/schemas/InviteStatus'
+        invitedAt:
+          $ref: '#/components/schemas/Date-Time'
 
     Invite:
       type: object

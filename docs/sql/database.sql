@@ -1,5 +1,5 @@
 -- Database: PostgreSQL
--- Last Updated at: 2026-10-18
+-- Last Updated at: 2026-10-21
 
 BEGIN; -- Make all table declarations transactional, good practice
 
@@ -102,25 +102,25 @@ COMMENT
 ON COLUMN "locations"."creator_id" IS 'Most of the time, this will be an admin or a defacto "System" account, such as user 0';
 
 ALTER TABLE "events"
-    ADD FOREIGN KEY ("creator_id") REFERENCES "users" ("user_id") DEFERRABLE INITIALLY IMMEDIATE;
+    ADD FOREIGN KEY ("creator_id") REFERENCES "users" ("user_id") ON DELETE SET NULL DEFERRABLE INITIALLY IMMEDIATE ;
 
 ALTER TABLE "events"
-    ADD FOREIGN KEY ("location_id") REFERENCES "locations" ("location_id") DEFERRABLE INITIALLY IMMEDIATE;
+    ADD FOREIGN KEY ("location_id") REFERENCES "locations" ("location_id") ON DELETE SET NULL DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "manager_event"
-    ADD FOREIGN KEY ("event_id") REFERENCES "events" ("event_id") DEFERRABLE INITIALLY IMMEDIATE;
+    ADD FOREIGN KEY ("event_id") REFERENCES "events" ("event_id") ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "manager_event"
-    ADD FOREIGN KEY ("manager_id") REFERENCES "users" ("user_id") DEFERRABLE INITIALLY IMMEDIATE;
+    ADD FOREIGN KEY ("manager_id") REFERENCES "users" ("user_id") ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "invites"
-    ADD FOREIGN KEY ("event_id") REFERENCES "events" ("event_id") DEFERRABLE INITIALLY IMMEDIATE;
+    ADD FOREIGN KEY ("event_id") REFERENCES "events" ("event_id") ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "invites"
-    ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") DEFERRABLE INITIALLY IMMEDIATE;
+    ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "locations"
-    ADD FOREIGN KEY ("creator_id") REFERENCES "users" ("user_id") DEFERRABLE INITIALLY IMMEDIATE;
+    ADD FOREIGN KEY ("creator_id") REFERENCES "users" ("user_id") ON DELETE SET NULL DEFERRABLE INITIALLY IMMEDIATE;
 COMMIT;
 
 -- Defer constraint checking for INSERT

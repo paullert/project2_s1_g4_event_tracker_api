@@ -1,5 +1,9 @@
 package cst438.project2.backend.controller;
 
+import cst438.project2.backend.dto.InviteResponse;
+import cst438.project2.backend.dto.InviteResponsePatch;
+import cst438.project2.backend.service.InviteService;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -8,12 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-
-import cst438.project2.backend.dto.InviteResponse;
-import cst438.project2.backend.dto.InviteResponsePatch;
-import cst438.project2.backend.service.InviteService;
 
 @RestController
 @RequestMapping("/api/v1/users")

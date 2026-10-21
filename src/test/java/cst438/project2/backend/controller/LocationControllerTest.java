@@ -52,13 +52,9 @@ class LocationControllerTest {
 
   private Location location;
   private final Long id = LOCATION_IDS[0];
-  private final Long id2 = LOCATION_IDS[1];
   private final String name = LOCATION_NAMES[0];
-  private final String name2 = LOCATION_NAMES[1];
   private final String address = ADDRESSES[0];
-  private final String address2 = ADDRESSES[1];
   private final String description = LOCATION_DESCRIPTIONS[0];
-  private final String description2 = LOCATION_DESCRIPTIONS[1];
   private final LocalDateTime updatedAt = NOW;
 
   @BeforeEach
@@ -105,11 +101,6 @@ class LocationControllerTest {
   @Test
   void putLocationReplacesLocation() throws Exception {
     String apiAddress = "/api/v1/locations/%d".formatted(id);
-    LocationCreate request = new LocationCreate(
-        name2,
-        address2,
-        description2
-    );
 
     when(locationService.getLocationById(id)).thenReturn(location);
     when(locationService.putLocation(any(Location.class), any(LocationCreate.class)))

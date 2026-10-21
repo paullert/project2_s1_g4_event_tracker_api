@@ -20,10 +20,10 @@ import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Event;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
-import cst438.project2.backend.model.UserRole;
 import cst438.project2.backend.repository.EventRepository;
 import cst438.project2.backend.security.SecurityConfig;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +48,10 @@ class EventServiceTest {
 
   private final LocalDateTime now = NOW;
 
+  // Used to format the date according to the response format
+  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+
   private Event event;
   private final Long eventId = EVENT_IDS[0];
   private final String eventName = BASE_EVENT_NAMES[0];
@@ -55,8 +59,6 @@ class EventServiceTest {
   private final LocalDateTime eventStartTime = EVENT_START_TIMES[0];
   private final Long creatorId = CREATOR_IDS[0];
   private final Long locationId = EVENT_LOCATION_IDS[0];
-  // All bad requests should throw BadRequestException with the following message
-  private final String badReqMsg = constructBadRequestMessage("eventId, eventName, eventDescription, eventStartTime, creatorId, locationId");
 
 
   private final User creator = new User(
@@ -86,7 +88,7 @@ class EventServiceTest {
         eventDescription,
         eventStartTime,
         creatorId,
-        LocalDateTime.from(eventStartTime),
+        eventStartTime,
         location.getLocationId()
     );
   }
@@ -96,9 +98,9 @@ class EventServiceTest {
     String name = EVENT_NAMES[0];
     String description = EVENT_DESCRIPTIONS[0];
     LocalDateTime newStartTime = OFFSET_TIMES[0];
-    LocalDateTime newUpdateTime = OFFSET_TIMES[1];
     Long newCreatorId = UPDATED_CREATOR_IDS[0];
     Long newLocationId = UPDATED_LOCATION_IDS[0];
+
     EventRequest request = new EventRequest(
         name,
         description,
@@ -114,7 +116,7 @@ class EventServiceTest {
 
     assertEquals(name, result.eventName());
     assertEquals(description, result.eventDescription());
-    assertEquals(newStartTime, result.startsOn());
+    assertEquals(newStartTime.format(formatter), result.startsOn());
     assertEquals(newCreatorId, result.creatorId());
     assertEquals(newLocationId, result.locationId());
 
@@ -129,7 +131,6 @@ class EventServiceTest {
     String description2 = UPDATE_EVENT_DESCRIPTIONS[1];
 
     LocalDateTime newStartTime = OFFSET_TIMES[0];
-    LocalDateTime newUpdateTime = OFFSET_TIMES[1];
     Long newCreatorId = UPDATED_CREATOR_IDS[0];
     Long newLocationId = UPDATED_LOCATION_IDS[0];
 
@@ -164,21 +165,21 @@ class EventServiceTest {
     EventResponse result1 = eventService.patchEvent(eventId, request1);
     assertEquals(name1, result1.eventName());
     assertEquals(description1, result1.eventDescription());
-    assertEquals(eventStartTime, result1.startsOn());
+    assertEquals(eventStartTime.format(formatter), result1.startsOn());
     assertEquals(creatorId, result1.creatorId());
     assertEquals(locationId, result1.locationId());
 
     EventResponse result2 = eventService.patchEvent(eventId, request2);
     assertEquals(name2, result2.eventName());
     assertEquals(description1, result2.eventDescription());
-    assertEquals(newStartTime, result2.startsOn());
+    assertEquals(newStartTime.format(formatter), result2.startsOn());
     assertEquals(creatorId, result2.creatorId());
     assertEquals(locationId, result2.locationId());
 
     EventResponse result3 = eventService.patchEvent(eventId, request3);
     assertEquals(name2, result3.eventName());
     assertEquals(description2, result3.eventDescription());
-    assertEquals(newStartTime, result3.startsOn());
+    assertEquals(newStartTime.format(formatter), result3.startsOn());
     assertEquals(newCreatorId, result3.creatorId());
     assertEquals(newLocationId, result3.locationId());
 
@@ -253,7 +254,7 @@ class EventServiceTest {
     assertEquals(eventStartTime, event.getStartsOn());
     assertEquals(creatorId, event.getCreatorId());
     assertEquals(locationId, event.getLocationId());
-    assertEquals(LocalDateTime.from(now), event.getUpdatedAt());
+    assertEquals(now, event.getUpdatedAt());
 
     // Verify no database calls were made
     verify(eventRepository, never()).save(any());

@@ -130,13 +130,6 @@ class EventControllerTest {
 
   @Test
   void putEventReplacesEvent() throws Exception {
-    EventRequest request = new EventRequest(
-        eventName2,
-        eventDescription2,
-        eventStartTime2,
-        creatorId,
-        locationId
-        );
 
     when(eventService.putEvent(any(Long.class), any(EventRequest.class)))
         .thenReturn(EventResponse.init(event));

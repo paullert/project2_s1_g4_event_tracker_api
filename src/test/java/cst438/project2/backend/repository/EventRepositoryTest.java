@@ -1,6 +1,5 @@
 package cst438.project2.backend.repository;
 
-import static cst438.project2.backend.TestResources.ErrorValues.INVALID_REQUEST_ID;
 import static cst438.project2.backend.TestResources.EventValues.*;
 import static cst438.project2.backend.TestResources.LocationValues.*;
 import static cst438.project2.backend.TestResources.UserValues.*;
@@ -9,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cst438.project2.backend.model.Event;
 import cst438.project2.backend.model.User;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +49,7 @@ class EventRepositoryTest {
         NOW,
         NOW
     );
-    creator = userRepository.save(creator);
+    userRepository.save(creator);
 
     Event event = new Event(
         null,

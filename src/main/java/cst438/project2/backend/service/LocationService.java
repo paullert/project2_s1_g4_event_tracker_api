@@ -55,11 +55,6 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
-  //TODO: possibly Remove
-  public Location saveLocation(Location location) {
-    return locationRepository.save(location);
-  }
-
   public Location patchLocation(Location location, LocationPatch reqBody) {
     if (reqBody.locationName() != null) {
       location.setLocationName(reqBody.locationName());
@@ -84,8 +79,7 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
-  public Location deleteLocation(Location location) {
+  public void deleteLocation(Location location) {
     locationRepository.delete(location);
-    return location;
   }
 }

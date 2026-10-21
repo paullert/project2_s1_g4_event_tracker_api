@@ -55,8 +55,8 @@ class LocationServiceTest {
   private final String description = LOCATION_DESCRIPTIONS[0];
   private final String description2 = LOCATION_DESCRIPTIONS[1];
   private final LocalDateTime now = NOW;
-  private final LocalDateTime createdAt = LocalDateTime.from(now);
-  private final LocalDateTime updatedAt = LocalDateTime.from(now);
+  private final LocalDateTime createdAt = now;
+  private final LocalDateTime updatedAt = now;
 
   User creator = new User(
       USER_IDS[0],

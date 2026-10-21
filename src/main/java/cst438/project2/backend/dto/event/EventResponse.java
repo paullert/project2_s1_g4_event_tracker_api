@@ -1,8 +1,6 @@
 package cst438.project2.backend.dto.event;
 
 import cst438.project2.backend.model.Event;
-
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public record EventResponse(

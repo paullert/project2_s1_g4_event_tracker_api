@@ -58,6 +58,7 @@ public class InviteService {
 //            HttpStatus.NOT_FOUND, "Invitation not found"
 //        ));
 
+
     //check to make sure invitations belonging to user
     if (!invite.getUser().getUserId().equals(userId)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found");

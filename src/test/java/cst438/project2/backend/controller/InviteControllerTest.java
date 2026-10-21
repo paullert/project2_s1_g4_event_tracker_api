@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import cst438.project2.backend.dto.InviteResponsePatch;
+import cst438.project2.backend.dto.invite.InviteRequest;
 import cst438.project2.backend.service.InviteService;
 
 public class InviteControllerTest {
@@ -22,8 +22,8 @@ public class InviteControllerTest {
 
         InviteController controller = new InviteController(inviteService, userService);
 
-        InviteResponsePatch request =
-                new InviteResponsePatch("ACCEPTED");
+        InviteRequest request =
+                new InviteRequest("ACCEPTED");
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,

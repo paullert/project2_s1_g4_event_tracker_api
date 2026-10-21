@@ -1,5 +1,6 @@
 package cst438.project2.backend.controller;
 
+import static cst438.project2.backend.TestResources.Dates.NOW;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -8,6 +9,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static cst438.project2.backend.TestResources.LocationValues.*;
+import static cst438.project2.backend.TestResources.ErrorValues.*;
 
 import cst438.project2.backend.dto.location.LocationCreate;
 import cst438.project2.backend.exceptions.BadRequestException;
@@ -48,60 +51,72 @@ class LocationControllerTest {
   private JwtDecoder jwtDecoder;
 
   private Location location;
+  private final Long id = LOCATION_IDS[0];
+  private final Long id2 = LOCATION_IDS[1];
+  private final String name = LOCATION_NAMES[0];
+  private final String name2 = LOCATION_NAMES[1];
+  private final String address = ADDRESSES[0];
+  private final String address2 = ADDRESSES[1];
+  private final String description = LOCATION_DESCRIPTIONS[0];
+  private final String description2 = LOCATION_DESCRIPTIONS[1];
+  private final LocalDateTime updatedAt = NOW;
 
   @BeforeEach
   void setUp() {
     location = new Location();
-    location.setLocationId(7L);
-    location.setLocationName("Main Office");
-    location.setAddress("10 Main Street");
-    location.setLocationDescription("Primary office");
-    location.setUpdatedAt(LocalDateTime.parse("2026-01-01T12:00:00"));
+    location.setLocationId(id);
+    location.setLocationName(name);
+    location.setAddress(address);
+    location.setLocationDescription(description);
+    location.setUpdatedAt(updatedAt);
   }
 
   @Test
   void getLocationReturnsLocation() throws Exception {
-    when(locationService.getLocationById(7L)).thenReturn(location);
+    when(locationService.getLocationById(id)).thenReturn(location);
 
     mockMvc.perform(
-            get("/api/v1/locations/7")
+            get("/api/v1/locations/%d".formatted(id))
                 .with(jwt())
         )
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.locationId").value(7))
-        .andExpect(jsonPath("$.locationName").value("Main Office"))
-        .andExpect(jsonPath("$.address").value("10 Main Street"))
-        .andExpect(jsonPath("$.locationDescription").value("Primary office"));
+        .andExpect(jsonPath("$.locationId").value(id))
+        .andExpect(jsonPath("$.locationName").value(name))
+        .andExpect(jsonPath("$.address").value(address))
+        .andExpect(jsonPath("$.locationDescription").value(description));
   }
 
   @Test
   void getLocationReturnsNotFoundWhenIdDoesNotExist() throws Exception {
-    when(locationService.getLocationById(999L))
-        .thenThrow(new NotFoundException(999L, "Location"));
+    // All not found requests should throw NotFoundException with a message like:
+    String notFoundMsg = constructNotFoundMessage("Location", "id "+ INVALID_REQUEST_ID);
+    when(locationService.getLocationById(INVALID_REQUEST_ID))
+        .thenThrow(new NotFoundException(INVALID_REQUEST_ID, "Location"));
 
     mockMvc.perform(
-            get("/api/v1/locations/999")
+            get("/api/v1/locations/%d".formatted(INVALID_REQUEST_ID))
                 .with(jwt())
         )
         .andExpect(status().isNotFound())
-        .andExpect(content().string("Location with id 999 not found"));
+        .andExpect(content().string(notFoundMsg));
   }
 
   @Test
   void putLocationReplacesLocation() throws Exception {
+    String apiAddress = "/api/v1/locations/%d".formatted(id);
     LocationCreate request = new LocationCreate(
-        "Updated Office",
-        "20 Main Street",
-        "Updated description"
+        name2,
+        address2,
+        description2
     );
 
-    when(locationService.getLocationById(7L)).thenReturn(location);
+    when(locationService.getLocationById(id)).thenReturn(location);
     when(locationService.putLocation(any(Location.class), any(LocationCreate.class)))
         .thenReturn(location);
 
     mockMvc.perform(
-            put("/api/v1/locations/7")
+            put(apiAddress)
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -115,19 +130,20 @@ class LocationControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("Successful"))
         .andExpect(jsonPath("$.message").value("Location Updated (Put)"))
-        .andExpect(jsonPath("$.location").value("/api/v1/locations/7"))
-        .andExpect(jsonPath("$.object.locationId").value(7));
+        .andExpect(jsonPath("$.location").value(apiAddress))
+        .andExpect(jsonPath("$.object.locationId").value(id));
   }
 
   @Test
   void putLocationReturnsBadRequestWhenARequiredFieldIsMissing() throws Exception {
-    when(locationService.getLocationById(7L)).thenReturn(location);
+    String badReqMsg = constructBadRequestMessage("locationName, address, locationDescription");
+
+    when(locationService.getLocationById(id)).thenReturn(location);
     when(locationService.putLocation(any(Location.class), any(LocationCreate.class)))
-        .thenThrow(new BadRequestException(
-            "Missing 1 or more required fields: locationName, address, locationDescription"));
+        .thenThrow(new BadRequestException(badReqMsg));
 
     mockMvc.perform(
-            put("/api/v1/locations/7")
+            put("/api/v1/locations/%d".formatted(id))
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -138,17 +154,18 @@ class LocationControllerTest {
                     """)
         )
         .andExpect(status().isBadRequest())
-        .andExpect(content().string(
-            "Missing 1 or more required fields: locationName, address, locationDescription"));
+        .andExpect(content().string(badReqMsg));
   }
 
   @Test
   void putLocationReturnsNotFoundWhenIdDoesNotExist() throws Exception {
-    when(locationService.getLocationById(999L))
-        .thenThrow(new NotFoundException(999L, "Location"));
+    String apiAddress = "/api/v1/locations/%d".formatted(INVALID_REQUEST_ID);
+    String notFoundMsg = constructNotFoundMessage("Location", "id "+ INVALID_REQUEST_ID);
+    when(locationService.getLocationById(INVALID_REQUEST_ID))
+        .thenThrow(new NotFoundException(INVALID_REQUEST_ID, "Location"));
 
     mockMvc.perform(
-            put("/api/v1/locations/999")
+            put(apiAddress)
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -160,6 +177,6 @@ class LocationControllerTest {
                     """)
         )
         .andExpect(status().isNotFound())
-        .andExpect(content().string("Location with id 999 not found"));
+        .andExpect(content().string(notFoundMsg));
   }
 }

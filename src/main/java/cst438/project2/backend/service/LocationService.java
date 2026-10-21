@@ -44,10 +44,13 @@ public class LocationService {
   public Location createLocation(LocationCreate locationReq, Authentication userAuth) {
     User creator = userService.findUserFromAuthentication(userAuth);
     Location location = new Location(
+        null,
         locationReq.locationName(),
         locationReq.address(),
         locationReq.locationDescription(),
-        creator
+        creator,
+        null,
+        null
     );
     return locationRepository.save(location);
   }

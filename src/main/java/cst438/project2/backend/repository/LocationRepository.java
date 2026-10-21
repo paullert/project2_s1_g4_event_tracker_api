@@ -1,7 +1,6 @@
 package cst438.project2.backend.repository;
 
 import cst438.project2.backend.model.Location;
-import cst438.project2.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 

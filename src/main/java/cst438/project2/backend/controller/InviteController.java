@@ -4,6 +4,9 @@ import cst438.project2.backend.dto.invite.MyInviteRequest;
 import cst438.project2.backend.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
+import org.springframework.http.ResponseEntity;
+import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -27,15 +30,26 @@ public class InviteController {
 
     // Gets a page of invitations
     @GetMapping
-    public Page<InviteResponse> getAllInvites(Pageable pageable) {
-        return inviteService.getInvites(pageable);
+    public PagedModel<InviteResponse> getAllInvites(Pageable pageable) {
+        return new PagedModel<>(inviteService.getInvites(pageable));
     }
 
     // Creates an invitation, provided a userId, and eventId
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public InviteResponse createInvite(Authentication auth, @RequestBody InviteRequest request) {
-        return inviteService.createInvite(auth, request);
+    public ResponseEntity<InviteResponse> createInvite(Authentication auth, @RequestBody InviteRequest request) {
+        return created(inviteService.createInvite(auth, request));
+    }
+
+    @PostMapping("events/{eventId}")
+    public ResponseEntity<InviteResponse> createEventInvite(Authentication auth,
+        @PathVariable Long eventId, @RequestBody InviteRequest request) {
+        return created(inviteService.createInvite(auth,
+            new InviteRequest(request.userId(), eventId, request.status(), request.message())));
+    }
+
+    private ResponseEntity<InviteResponse> created(InviteResponse invite) {
+        URI location = URI.create("/api/v1/invites/users/" + invite.userId() + "/events/" + invite.eventId());
+        return ResponseEntity.created(location).body(invite);
     }
 
     // Updates invitation
@@ -55,17 +69,17 @@ public class InviteController {
     //currently users would be able to change the userId, final route should have authentication to know that you are the user you are getting the invite lists for.
     // TODO: Make admin role only
     @GetMapping("users/{userId}")
-    public Page<InviteResponse> getUserInvites(
+    public PagedModel<InviteResponse> getUserInvites(
             @PathVariable Long userId,
             Pageable pageable
     ) {
-        return inviteService.getInvitesForUser(userId, pageable);
+        return new PagedModel<>(inviteService.getInvitesForUser(userId, pageable));
     }
 
     //TODO: Finish
     @GetMapping("events/{eventId}")
-    public Page<InviteResponse> getEventInvites(Authentication auth, @PathVariable Long eventId, Pageable pageable) {
-        return inviteService.getEventInvites(auth, eventId, pageable);
+    public PagedModel<InviteResponse> getEventInvites(Authentication auth, @PathVariable Long eventId, Pageable pageable) {
+        return new PagedModel<>(inviteService.getEventInvites(auth, eventId, pageable));
     }
 
     //TODO: Finish
@@ -75,6 +89,12 @@ public class InviteController {
             @PathVariable Long eventId
     ) {
         return inviteService.getInvite(userId, eventId);
+    }
+
+    @PatchMapping("users/{userId}/events/{eventId}")
+    public InviteResponse patchUserEventInvite(Authentication auth, @PathVariable Long userId,
+        @PathVariable Long eventId, @RequestBody InviteRequest request) {
+        return inviteService.patchInviteAsAdmin(auth, userId, eventId, request);
     }
 
     @DeleteMapping("users/{userId}/events/{eventId}")
@@ -90,9 +110,8 @@ public class InviteController {
     //TODO: Finish
     // TODO: Make user role only
     @GetMapping("me")
-    public Page<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
-        Page<InviteResponse> invites = inviteService.getMyInvites(auth, pageable);
-        return invites;
+    public PagedModel<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
+        return new PagedModel<>(inviteService.getMyInvites(auth, pageable));
     }
 
     @GetMapping("me/{eventId}")
@@ -104,16 +123,12 @@ public class InviteController {
     }
 
 
-    //TODO: Finish
-    // make user role only
-    @PutMapping("me/{inviteId}")
+    @RequestMapping(value = "me/{eventId}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public InviteResponse respondToMyInvite(
-            @PathVariable Long inviteId,
+            Authentication auth,
+            @PathVariable Long eventId,
             @RequestBody MyInviteRequest request
     ) {
-        throw new ResponseStatusException(
-                HttpStatus.NOT_IMPLEMENTED,
-                "Authentication is not implemented yet"
-        );
+        return inviteService.respondToMyInvite(auth, eventId, request);
     }
 }

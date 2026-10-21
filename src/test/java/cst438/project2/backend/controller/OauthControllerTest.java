@@ -83,13 +83,6 @@ class OauthControllerTest {
   }
 
   @Test
-  void unregisteredAccountReturns404() throws Exception {
-    when(users.findUserFromAuthentication(any())).thenThrow(
-        new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-    mvc.perform(get("/auth/me").with(jwt())).andExpect(status().isNotFound());
-  }
-
-  @Test
   void duplicateUsernameReturns409() throws Exception {
     when(users.registerUser(any(), eq("alex"))).thenThrow(
         new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists"));

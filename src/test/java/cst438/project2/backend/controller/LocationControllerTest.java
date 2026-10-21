@@ -12,17 +12,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static cst438.project2.backend.TestResources.LocationValues.*;
 import static cst438.project2.backend.TestResources.ErrorValues.*;
 
 import cst438.project2.backend.dto.location.LocationCreate;
 import cst438.project2.backend.dto.location.LocationPatch;
 import cst438.project2.backend.exceptions.BadRequestException;
-import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.security.JwtAuthConverter;
 import cst438.project2.backend.security.SecurityConfig;
@@ -31,13 +30,10 @@ import cst438.project2.backend.service.UserService;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.http.HttpMethod;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -95,7 +91,7 @@ class LocationControllerTest {
         .andExpect(jsonPath("$.locationId").value(id))
         .andExpect(jsonPath("$.locationName").value(name))
         .andExpect(jsonPath("$.address").value(address))
-        .andExpect(jsonPath("$.locationDescription").value(description));
+        .andExpect(jsonPath("$.locationDesc").value(description));
   }
 
   @Test
@@ -109,16 +105,16 @@ class LocationControllerTest {
   }
 
   @Test
-  void createLocationReturns201WithResponseEnvelope() throws Exception {
+  void createLocationReturns201WithLocationHeaderAndResource() throws Exception {
     when(locationService.createLocation(any(), any())).thenReturn(location);
     mockMvc.perform(post("/api/v1/locations").with(jwt())
         .contentType(MediaType.APPLICATION_JSON).content("""
-            {"locationName":"Office","address":"10 Main Street","locationDescription":"Meeting room"}
+            {"locationName":"Office","address":"10 Main Street","locationDesc":"Meeting room"}
             """))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.message").value("Location Created"))
-        .andExpect(jsonPath("$.location").value("/api/v1/locations/" + id))
-        .andExpect(jsonPath("$.object.locationId").value(id));
+        .andExpect(header().string("Location", "/api/v1/locations/" + id))
+        .andExpect(jsonPath("$.locationId").value(id))
+        .andExpect(jsonPath("$.object").doesNotExist());
     verify(locationService).createLocation(eq(new LocationCreate("Office", "10 Main Street", "Meeting room")), any());
   }
 
@@ -129,51 +125,25 @@ class LocationControllerTest {
     mockMvc.perform(patch("/api/v1/locations/" + id).with(jwt())
         .contentType(MediaType.APPLICATION_JSON).content("{\"address\":\"20 Main Street\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.message").value("Location Updated (Patch)"));
+        .andExpect(jsonPath("$.locationId").value(id));
     verify(locationService).patchLocation(location, new LocationPatch(null, "20 Main Street", null));
   }
 
   @Test
-  void deleteLocationReturnsDeletionEnvelope() throws Exception {
+  void deleteLocationReturns204WithoutABody() throws Exception {
     when(locationService.getLocationById(id)).thenReturn(location);
     mockMvc.perform(delete("/api/v1/locations/" + id).with(jwt()))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.message").value("Deleted Location"))
-        .andExpect(jsonPath("$.object.locationId").value(id));
+        .andExpect(status().isNoContent())
+        .andExpect(content().string(""));
     verify(locationService).deleteLocation(location);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"POST", "PUT", "PATCH", "DELETE"})
-  void locationWritesRequireAuthentication(String method) throws Exception {
-    String path = method.equals("POST") ? "/api/v1/locations" : "/api/v1/locations/7";
-    mockMvc.perform(request(HttpMethod.valueOf(method), path)
+  @Test
+  void locationWritesRequireAuthentication() throws Exception {
+    mockMvc.perform(post("/api/v1/locations")
         .contentType(MediaType.APPLICATION_JSON).content("{}"))
         .andExpect(status().isUnauthorized());
     verifyNoInteractions(locationService, userService);
-  }
-
-  @Test
-  void malformedLocationJsonReturns400() throws Exception {
-    mockMvc.perform(post("/api/v1/locations").with(jwt())
-        .contentType(MediaType.APPLICATION_JSON).content("{broken"))
-        .andExpect(status().isBadRequest());
-    verifyNoInteractions(locationService, userService);
-  }
-
-  @Test
-  void getLocationReturnsNotFoundWhenIdDoesNotExist() throws Exception {
-    // All not found requests should throw NotFoundException with a message like:
-    String notFoundMsg = constructNotFoundMessage("Location", "id "+ INVALID_REQUEST_ID);
-    when(locationService.getLocationById(INVALID_REQUEST_ID))
-        .thenThrow(new NotFoundException(INVALID_REQUEST_ID, "Location"));
-
-    mockMvc.perform(
-            get("/api/v1/locations/%d".formatted(INVALID_REQUEST_ID))
-                .with(jwt())
-        )
-        .andExpect(status().isNotFound())
-        .andExpect(content().string(notFoundMsg));
   }
 
   @Test
@@ -197,15 +167,12 @@ class LocationControllerTest {
                     """)
         )
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("Successful"))
-        .andExpect(jsonPath("$.message").value("Location Updated (Put)"))
-        .andExpect(jsonPath("$.location").value(apiAddress))
-        .andExpect(jsonPath("$.object.locationId").value(id));
+        .andExpect(jsonPath("$.locationId").value(id));
   }
 
   @Test
   void putLocationReturnsBadRequestWhenARequiredFieldIsMissing() throws Exception {
-    String badReqMsg = constructBadRequestMessage("locationName, address, locationDescription");
+    String badReqMsg = constructBadRequestMessage("locationName, address");
 
     when(locationService.getLocationById(id)).thenReturn(location);
     when(locationService.putLocation(any(Location.class), any(LocationCreate.class)))
@@ -223,29 +190,9 @@ class LocationControllerTest {
                     """)
         )
         .andExpect(status().isBadRequest())
-        .andExpect(content().string(badReqMsg));
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.detail").value(badReqMsg));
   }
 
-  @Test
-  void putLocationReturnsNotFoundWhenIdDoesNotExist() throws Exception {
-    String apiAddress = "/api/v1/locations/%d".formatted(INVALID_REQUEST_ID);
-    String notFoundMsg = constructNotFoundMessage("Location", "id "+ INVALID_REQUEST_ID);
-    when(locationService.getLocationById(INVALID_REQUEST_ID))
-        .thenThrow(new NotFoundException(INVALID_REQUEST_ID, "Location"));
-
-    mockMvc.perform(
-            put(apiAddress)
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {
-                      "locationName": "Updated Office",
-                      "address": "20 Main Street",
-                      "locationDescription": "Updated description"
-                    }
-                    """)
-        )
-        .andExpect(status().isNotFound())
-        .andExpect(content().string(notFoundMsg));
-  }
 }

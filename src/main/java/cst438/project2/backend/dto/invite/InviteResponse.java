@@ -4,7 +4,7 @@ import cst438.project2.backend.dto.event.EventResponse;
 import cst438.project2.backend.model.Invite;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import cst438.project2.backend.dto.ApiDates;
 
 //data transfer object that send following information back to user
 public record InviteResponse(
@@ -14,7 +14,9 @@ public record InviteResponse(
         String eventDescription,
         String startsOn,
         String status,
-        LocalDateTime invitedAt
+        String invitedAt,
+        String message,
+        String respondedAt
 
 ) {
   public static InviteResponse init(Invite invite) {
@@ -23,10 +25,11 @@ public record InviteResponse(
         invite.getInviteId().getEventId(),
         invite.getEvent().getEventName(),
         invite.getEvent().getEventDescription(),
-        invite.getEvent().getStartsOn()
-            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
+        ApiDates.format(invite.getEvent().getStartsOn()),
         invite.getStatus().toString(),
-        invite.getInvitedAt()
+        ApiDates.format(invite.getInvitedAt()),
+        invite.getMessage(),
+        ApiDates.format(invite.getRespondedAt())
     );
   }
 }

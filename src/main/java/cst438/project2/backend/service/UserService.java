@@ -61,7 +61,12 @@ public class UserService {
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
       }
       User newUser = new User();
+      String email = jwt.getClaimAsString("email");
+      if (email == null || email.isBlank()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Google identity must include an email address");
+      }
       newUser.setUsername(trimName);
+      newUser.setEmail(email);
       newUser.setGoogleSubject(jwt.getSubject());
       newUser.setRole(UserRole.USER);
       return userRepository.save(newUser);
@@ -88,15 +93,16 @@ public class UserService {
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public User updateUser(Long userId, UserRequest patch) {
-      if (patch == null || patch.role() == null) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing required fields: role");
+      if (patch == null || (patch.role() == null && patch.username() == null
+          && patch.email() == null && patch.subject() == null)) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provide at least one user field to change");
       }
 
       User user = getUser(userId);
-      user.setRole(patch.role());
-      user.setUsername(patch.username());
-      user.setEmail(patch.email());
-      user.setGoogleSubject(patch.subject());
+      if (patch.role() != null) user.setRole(patch.role());
+      if (patch.username() != null) user.setUsername(patch.username());
+      if (patch.email() != null) user.setEmail(patch.email());
+      if (patch.subject() != null) user.setGoogleSubject(patch.subject());
       return userRepository.save(user);
     }
 

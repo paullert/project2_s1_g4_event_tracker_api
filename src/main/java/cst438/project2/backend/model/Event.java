@@ -7,6 +7,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SourceType;
 
 @Entity
 @Table(name = "events")
@@ -29,6 +32,11 @@ public class Event {
     @Column(name = "creator_id")
     private Long creatorId;
 
+    @CreationTimestamp(source = SourceType.DB)
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp(source = SourceType.DB)
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -90,6 +98,10 @@ public class Event {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public void setUpdatedAt(LocalDateTime updatedAt) {

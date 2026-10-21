@@ -66,7 +66,7 @@ Content-Type: application/json
   "eventId": 2
 }
 
-### Delete an Invite (Manager assigned to event 2; returns 204 if present)
+### Delete an Invite (manager gets 403; OpenAPI permits admins only)
 DELETE {{baseUrl}}/api/v1/invites/users/5/events/2
 Authorization: Bearer {{token}}
 

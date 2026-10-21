@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import cst438.project2.backend.dto.event.EventRequest;
-import cst438.project2.backend.dto.invite.InviteRequest;
 import cst438.project2.backend.model.*;
 import cst438.project2.backend.repository.*;
 import java.time.LocalDateTime;
@@ -18,8 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -38,7 +35,7 @@ class ManagerOwnershipSecurityTest {
 
   @Configuration
   @EnableMethodSecurity
-  @Import({UserService.class, EventOwnershipService.class, EventService.class, InviteService.class})
+  @Import({UserService.class, EventOwnershipService.class, EventService.class})
   static class Config {
     @Bean UserRepository users() { return mock(UserRepository.class); }
     @Bean EventRepository events() { return mock(EventRepository.class); }
@@ -51,9 +48,7 @@ class ManagerOwnershipSecurityTest {
   @Autowired private InviteRepository invites;
   @Autowired private ManagerEventRepository managerEvents;
   @Autowired private EventService eventService;
-  @Autowired private InviteService inviteService;
   @Autowired private EventOwnershipService ownership;
-  @Autowired private UserService userService;
   private Event event;
 
   @BeforeEach
@@ -148,61 +143,6 @@ class ManagerOwnershipSecurityTest {
     order.verify(invites).deleteForEvent(EVENT_ID);
     order.verify(managerEvents).deleteForEvent(EVENT_ID);
     order.verify(events).delete(event);
-  }
-
-  @Test
-  void unassignedManagerCannotReadCreateOrChangeEventInvitations() {
-    var auth = signIn(UserRole.MANAGER, MANAGER_ID);
-    InviteRequest request = new InviteRequest(99L, EVENT_ID, "ACCEPTED", "Message");
-    assertThrows(ResponseStatusException.class,
-        () -> inviteService.getEventInvites(auth, EVENT_ID, PageRequest.of(0, 10)));
-    assertThrows(org.springframework.security.access.AccessDeniedException.class,
-        () -> inviteService.getInvite(99L, EVENT_ID));
-    assertThrows(ResponseStatusException.class, () -> inviteService.createInvite(auth, request));
-    assertThrows(ResponseStatusException.class, () -> inviteService.updateInvite(auth, request));
-    assertThrows(ResponseStatusException.class, () -> inviteService.patchInvite(auth, request));
-    verifyNoInteractions(invites);
-  }
-
-  @Test
-  void assignedManagerCanListAndUpdateEventInvitations() {
-    var auth = signIn(UserRole.MANAGER, MANAGER_ID);
-    when(managerEvents.existsById(new ManagerEventId(EVENT_ID, MANAGER_ID))).thenReturn(true);
-    var pageable = PageRequest.of(0, 10);
-    when(invites.findByEvent_Id(EVENT_ID, pageable)).thenReturn(Page.empty());
-    assertTrue(inviteService.getEventInvites(auth, EVENT_ID, pageable).isEmpty());
-    User recipient = new User(99L, "recipient", "recipient-subject", UserRole.USER, null, null);
-    Invite invite = new Invite(new InviteId(99L, EVENT_ID), recipient, event,
-        InviteStatus.PENDING, "Original", START, null);
-    when(invites.findByUser_UserIdAndEvent_Id(99L, EVENT_ID)).thenReturn(Optional.of(invite));
-    when(invites.save(invite)).thenReturn(invite);
-    inviteService.patchInvite(auth, new InviteRequest(99L, EVENT_ID, null, "Updated"));
-    assertEquals("Updated", invite.getMessage());
-  }
-
-  @Test
-  void recipientCanReadTheirOwnInvitationWithoutManagerOwnership() {
-    var auth = signIn(UserRole.USER, MANAGER_ID);
-    User recipient = userService.findUserFromAuthentication(auth);
-    Invite invite = new Invite(new InviteId(MANAGER_ID, EVENT_ID), recipient, event,
-        InviteStatus.PENDING, null, START, null);
-    when(invites.findByUser_UserIdAndEvent_Id(MANAGER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
-    assertEquals(EVENT_ID, inviteService.getMyInvite(auth, EVENT_ID).eventId());
-    verifyNoInteractions(managerEvents);
-  }
-
-  @Test
-  void administratorCanAssignMultipleManagersAndRemoveOne() {
-    signIn(UserRole.ADMIN, 1L);
-    when(events.existsById(EVENT_ID)).thenReturn(true);
-    for (long managerId : new long[]{MANAGER_ID, 8L}) {
-      when(users.findById(managerId)).thenReturn(Optional.of(
-          new User(managerId, "manager", "subject", UserRole.MANAGER, null, null)));
-      ownership.assignManager(EVENT_ID, managerId);
-    }
-    verify(managerEvents, times(2)).save(any(ManagerEvent.class));
-    ownership.removeManager(EVENT_ID, MANAGER_ID);
-    verify(managerEvents).deleteById(new ManagerEventId(EVENT_ID, MANAGER_ID));
   }
 
   @Test

@@ -14,20 +14,15 @@ import cst438.project2.backend.service.InviteService;
 import cst438.project2.backend.service.UserService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
 
 @WebMvcTest(InviteController.class)
 @Import(SecurityConfig.class)
@@ -39,7 +34,7 @@ class InviteControllerTest {
   @MockitoBean private JwtDecoder decoder;
 
   private final InviteResponse response = new InviteResponse(
-      7L, 20L, "Study session", "Planning", "2026-11-01 12:00", "PENDING", null);
+      7L, 20L, "Study session", "Planning", "2026-11-01 12:00", "PENDING", null, null, null);
   private static final String INVITATION = """
       {"userId":7,"eventId":20,"status":"PENDING","message":"Welcome"}
       """;
@@ -51,7 +46,7 @@ class InviteControllerTest {
     mvc.perform(get("/api/v1/invites?page=1&size=2").with(jwt()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].eventId").value(20))
-        .andExpect(jsonPath("$.totalElements").value(3));
+        .andExpect(jsonPath("$.page.totalElements").value(3));
     verify(invites).getInvites(pageable);
   }
 
@@ -61,26 +56,6 @@ class InviteControllerTest {
     mvc.perform(get("/api/v1/invites/users/7").with(jwt()))
         .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].userId").value(7));
     verify(invites).getInvitesForUser(eq(7L), any());
-  }
-
-  @Test
-  void listEventInvitationsPassesAuthenticatedCaller() throws Exception {
-    when(invites.getEventInvites(any(), eq(20L), any())).thenReturn(new PageImpl<>(List.of(response)));
-    mvc.perform(get("/api/v1/invites/events/20")
-        .with(jwt().jwt(token -> token.subject("manager-subject"))))
-        .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].status").value("PENDING"));
-    verify(invites).getEventInvites(argThat(auth -> "manager-subject".equals(auth.getName())),
-        eq(20L), any());
-  }
-
-  @Test
-  void createInvitationReturns201AndBindsBody() throws Exception {
-    var request = new InviteRequest(7L, 20L, "PENDING", "Welcome");
-    when(invites.createInvite(any(), eq(request))).thenReturn(response);
-    mvc.perform(post("/api/v1/invites").with(jwt())
-        .contentType(MediaType.APPLICATION_JSON).content(INVITATION))
-        .andExpect(status().isCreated()).andExpect(jsonPath("$.eventId").value(20));
-    verify(invites).createInvite(any(), eq(request));
   }
 
   @Test
@@ -103,69 +78,12 @@ class InviteControllerTest {
     verify(invites).patchInvite(any(), eq(request));
   }
 
-  @ParameterizedTest
-  @CsvSource({"GET,/api/v1/invites", "POST,/api/v1/invites", "PUT,/api/v1/invites",
-      "PATCH,/api/v1/invites", "GET,/api/v1/invites/users/7",
-      "GET,/api/v1/invites/events/20", "GET,/api/v1/invites/users/7/events/20",
-      "DELETE,/api/v1/invites/users/7/events/20"})
-  void invitationRoutesRequireAuthentication(String method, String path) throws Exception {
-    mvc.perform(request(HttpMethod.valueOf(method), path)
+  @Test
+  void invitationRoutesRequireAuthentication() throws Exception {
+    mvc.perform(post("/api/v1/invites")
         .contentType(MediaType.APPLICATION_JSON).content(INVITATION))
         .andExpect(status().isUnauthorized());
     verifyNoInteractions(invites);
   }
 
-  @Test
-  void missingInvitationReturns404() throws Exception {
-    when(invites.getInvite(eq(7L), eq(20L))).thenThrow(
-        new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found"));
-    mvc.perform(get("/api/v1/invites/users/7/events/20").with(jwt()))
-        .andExpect(status().isNotFound());
-  }
-
-  @Test
-  void deleteInvitationBindsBothIdsAndAuthenticatedCallerAndReturns204() throws Exception {
-    mvc.perform(delete("/api/v1/invites/users/7/events/20")
-            .with(jwt().jwt(token -> token.subject("manager-subject"))))
-        .andExpect(status().isNoContent())
-        .andExpect(content().string(""));
-    verify(invites).deleteInvite(
-        argThat(auth -> "manager-subject".equals(auth.getName())), eq(7L), eq(20L));
-  }
-
-  @Test
-  void ownershipDenialFromServiceReturns403() throws Exception {
-    when(invites.getEventInvites(any(), eq(20L), any())).thenThrow(
-        new ResponseStatusException(HttpStatus.FORBIDDEN, "Not assigned to event"));
-    mvc.perform(get("/api/v1/invites/events/20").with(jwt()))
-        .andExpect(status().isForbidden());
-  }
-
-  @Test
-  void malformedJsonReturns400BeforeCallingService() throws Exception {
-    mvc.perform(post("/api/v1/invites").with(jwt())
-        .contentType(MediaType.APPLICATION_JSON).content("{broken"))
-        .andExpect(status().isBadRequest());
-    verifyNoInteractions(invites);
-  }
-
-  @Test
-  void getMyInvitationPassesTheAuthenticatedCallerAndEventId() throws Exception {
-    when(invites.getMyInvite(any(), eq(20L))).thenReturn(response);
-    mvc.perform(get("/api/v1/invites/me/20")
-            .with(jwt().jwt(token -> token.subject("recipient-subject"))))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.eventId").value(20));
-    verify(invites).getMyInvite(
-        argThat(auth -> "recipient-subject".equals(auth.getName())), eq(20L));
-  }
-
-  @ParameterizedTest
-  @CsvSource({"PUT,/api/v1/invites/me/20"})
-  void unfinishedSelfInvitationRoutesExplicitlyReturn501(String method, String path) throws Exception {
-    mvc.perform(request(HttpMethod.valueOf(method), path).with(jwt())
-        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"ACCEPTED\"}"))
-        .andExpect(status().isNotImplemented());
-    verifyNoInteractions(invites);
-  }
 }

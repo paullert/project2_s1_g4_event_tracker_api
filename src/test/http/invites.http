@@ -73,7 +73,6 @@ GET {{baseUrl}}/api/v1/invites/me/2
 Authorization: Bearer {{token}}
 
 ### Respond to my invite
-### This currently returns 501 until authentication is implemented.
 PATCH {{baseUrl}}/api/v1/invites/me/1
 Authorization: Bearer {{token}}
 Content-Type: application/json

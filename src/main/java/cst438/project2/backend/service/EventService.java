@@ -38,14 +38,12 @@ public class EventService {
     this.invites = invites;
   }
 
-  @PreAuthorize("hasAnyRole('USER','MANAGER', 'ADMIN')")
   @Transactional(readOnly = true)
   public Page<EventResponse> getEvents(Pageable pageable) {
     Page<Event> events = eventRepository.findAll(pageable);
     return events.map(EventResponse::init);
   }
 
-  @PreAuthorize("hasAnyRole('USER','MANAGER', 'ADMIN')")
   @Transactional(readOnly = true)
   public EventResponse getEvent(Long eventId) {
     return EventResponse.init(eventRepository.findById(eventId)
@@ -67,8 +65,9 @@ public class EventService {
   @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
   @Transactional
   public EventResponse createEvent(Authentication auth, EventRequest request) {
-    if (request.eventName() == null || request.eventDescription() == null || request.startsOn() == null) {
-      throw new BadRequestException("Missing required fields: eventName, eventDescription, startsOn");
+    if (request.eventName() == null || request.eventDescription() == null || request.startsOn() == null
+        || request.locationId() == null) {
+      throw new BadRequestException("Missing required fields: eventName, eventDescription, startsOn, locationId");
     }
 
     User user = userService.findUserFromAuthentication(auth);
@@ -116,6 +115,10 @@ public class EventService {
   @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
   @Transactional
   public EventResponse patchEvent(Authentication auth, Long eventId, EventRequest request) {
+    if (request.eventName() == null && request.eventDescription() == null && request.startsOn() == null
+        && request.creatorId() == null && request.locationId() == null) {
+      throw new BadRequestException("Provide at least one event field to change");
+    }
     User user = userService.findUserFromAuthentication(auth);
     ownership.requireCanManageEvent(user, eventId);
 

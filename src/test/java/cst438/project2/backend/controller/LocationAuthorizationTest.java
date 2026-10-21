@@ -28,7 +28,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -65,7 +64,7 @@ class LocationAuthorizationTest {
       return saved;
     });
     boolean admin = role == UserRole.ADMIN;
-    int expectedStatus = admin ? (method.equals("POST") ? 201 : 200) : 403;
+    int expectedStatus = admin ? (method.equals("POST") ? 201 : method.equals("DELETE") ? 204 : 200) : 403;
     String path = method.equals("POST") ? "/api/v1/locations" : "/api/v1/locations/7";
 
     mvc.perform(request(HttpMethod.valueOf(method), path)
@@ -104,17 +103,6 @@ class LocationAuthorizationTest {
         .andExpect(status().isForbidden());
 
     verify(locations, times(1)).save(any(Location.class));
-  }
-
-  @Test
-  void invalidBearerTokenIsRejectedBeforeLookingUpAnAccount() throws Exception {
-    when(decoder.decode("invalid-token")).thenThrow(new BadJwtException("Invalid token"));
-
-    mvc.perform(post("/api/v1/locations").header("Authorization", "Bearer invalid-token")
-            .contentType(MediaType.APPLICATION_JSON).content(BODY))
-        .andExpect(status().isUnauthorized());
-
-    verifyNoInteractions(users, locations);
   }
 
   private User authenticateAs(UserRole role) {

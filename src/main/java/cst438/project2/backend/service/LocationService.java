@@ -49,6 +49,9 @@ public class LocationService {
   @PreAuthorize("hasRole('ADMIN')")
   @Transactional
   public Location createLocation(LocationCreate locationReq, Authentication userAuth) {
+    if (locationReq.locationName() == null || locationReq.address() == null) {
+      throw new BadRequestException("Missing required fields: locationName, address");
+    }
     User creator = userService.findUserFromAuthentication(userAuth);
     Location location = new Location(
         null,
@@ -65,6 +68,9 @@ public class LocationService {
   @PreAuthorize("hasRole('ADMIN')")
   @Transactional
   public Location patchLocation(Location location, LocationPatch reqBody) {
+    if (reqBody.locationName() == null && reqBody.address() == null && reqBody.locationDescription() == null) {
+      throw new BadRequestException("Provide at least one location field to change");
+    }
     if (reqBody.locationName() != null) {
       location.setLocationName(reqBody.locationName());
     }
@@ -81,8 +87,8 @@ public class LocationService {
   @PreAuthorize("hasRole('ADMIN')")
   @Transactional
   public Location putLocation(Location location, LocationCreate reqBody) {
-    if (reqBody.locationName() == null || reqBody.address() == null || reqBody.locationDescription() == null) {
-      throw new BadRequestException("Missing 1 or more required fields: locationName, address, locationDescription");
+    if (reqBody.locationName() == null || reqBody.address() == null) {
+      throw new BadRequestException("Missing 1 or more required fields: locationName, address");
     }
     location.setAddress(reqBody.address());
     location.setLocationDescription(reqBody.locationDescription());

@@ -1,6 +1,7 @@
 package cst438.project2.backend.service;
 
 import cst438.project2.backend.model.InviteStatus;
+import cst438.project2.backend.dto.ApiDates;
 import cst438.project2.backend.model.UserRole;
 import java.time.LocalDateTime;
 
@@ -89,6 +90,12 @@ public class InviteService {
     return inviteRepository.countByEvent_IdAndStatus(eventId, InviteStatus.ACCEPTED);
   }
 
+  @Transactional(readOnly = true)
+  public long getArchivedAttendeeCount(Long eventId) {
+    return eventRepository.findArchivedAttendeeCount(eventId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Archived event not found"));
+  }
+
   // Updates a present invite
   // Finds invite based on body, must provide userId and eventId
   @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
@@ -124,7 +131,7 @@ public class InviteService {
 
     //update invitation status
     invite.setStatus(InviteStatus.valueOf(status));
-    invite.setRespondedAt(LocalDateTime.now());
+    invite.setRespondedAt(ApiDates.now());
     invite.setMessage(message);
 
     invite = inviteRepository.save(invite);
@@ -174,7 +181,7 @@ public class InviteService {
 
     isValidStatus(status);
     invite.setStatus(InviteStatus.valueOf(status));
-    invite.setRespondedAt(LocalDateTime.now());
+    invite.setRespondedAt(ApiDates.now());
     return InviteResponse.init(inviteRepository.save(invite));
   }
 
@@ -225,7 +232,7 @@ public class InviteService {
         event,
         status,
         request.message(),
-        LocalDateTime.now(),
+        ApiDates.now(),
         null
     );
     invite = inviteRepository.save(invite);
@@ -247,6 +254,10 @@ public class InviteService {
 
     ownership.requireCanManageEvent(userService.findUserFromAuthentication(auth), eventId);
 
+    if (request.status() == null && request.message() == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provide a status or message to change");
+    }
+
     Invite invite = inviteRepository.findByUser_UserIdAndEvent_Id(userId, eventId)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Invitation not found"
@@ -255,7 +266,7 @@ public class InviteService {
     if (request.status() != null) {
       InviteStatus status = InviteStatus.valueOf(request.status());
       invite.setStatus(status);
-      invite.setRespondedAt(LocalDateTime.now());
+      invite.setRespondedAt(ApiDates.now());
     }
 
     String message = request.message();
@@ -273,7 +284,7 @@ public class InviteService {
     return InviteResponse.init(invite);
   }
 
-  @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   @Transactional
   public void deleteInvite(Authentication auth, Long userId, Long eventId) {
     if (userId == null || eventId == null) {
@@ -282,6 +293,13 @@ public class InviteService {
     ownership.requireCanManageEvent(userService.findUserFromAuthentication(auth), eventId);
     Invite invite = findInvite(userId, eventId);
     inviteRepository.delete(invite);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @Transactional
+  public InviteResponse patchInviteAsAdmin(Authentication auth, Long userId, Long eventId,
+      InviteRequest request) {
+    return patchInvite(auth, new InviteRequest(userId, eventId, request.status(), request.message()));
   }
 
   // Checks if status matches one of our states, throw Err if not

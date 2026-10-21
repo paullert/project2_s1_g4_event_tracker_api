@@ -1,11 +1,10 @@
 package cst438.project2.backend.dto.invite;
 
-import cst438.project2.backend.dto.location.LocationResponse;
+import cst438.project2.backend.dto.event.EventResponse;
 import cst438.project2.backend.model.Invite;
-import cst438.project2.backend.model.Location;
-import jakarta.persistence.Column;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 //data transfer object that send following information back to user
 public record InviteResponse(
@@ -13,20 +12,21 @@ public record InviteResponse(
         Long eventId,
         String eventName,
         String eventDescription,
-        LocalDateTime startsOn,
+        String startsOn,
         String status,
         LocalDateTime invitedAt
 
 ) {
-    public static InviteResponse init(Invite invite) {
-        return new InviteResponse(
-                invite.getUser().getUserId(),
-                invite.getEvent().getId(),
-                invite.getEvent().getEventName(),
-                invite.getEvent().getEventDescription(),
-                invite.getEvent().getStartsOn(),
-                invite.getStatus(),
-                invite.getInvitedAt()
-        );
-    }
+  public static InviteResponse init(Invite invite) {
+    return new InviteResponse(
+        invite.getInviteId().getUserId(),
+        invite.getInviteId().getEventId(),
+        invite.getEvent().getEventName(),
+        invite.getEvent().getEventDescription(),
+        invite.getEvent().getStartsOn()
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
+        invite.getStatus().toString(),
+        invite.getInvitedAt()
+    );
+  }
 }

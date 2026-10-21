@@ -1,6 +1,8 @@
 package cst438.project2.backend.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
@@ -16,7 +18,7 @@ public class Invite {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("userId")
-    @JoinColumn(name = "course_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -24,8 +26,11 @@ public class Invite {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @Column(name = "status")
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", columnDefinition = "invite_response") // columnDefinition passes raw SQL to the database, in this case the enum type
+    private InviteStatus status;
 
     @Column(name = "message")
     private String message;
@@ -38,7 +43,7 @@ public class Invite {
 
     public Invite(){}
 
-    public Invite(InviteId inviteId, User user, Event event, String status, String message, LocalDateTime invitedAt, LocalDateTime respondedAt) {
+    public Invite(InviteId inviteId, User user, Event event, InviteStatus status, String message, LocalDateTime invitedAt, LocalDateTime respondedAt) {
         this.inviteId = inviteId;
         this.user = user;
         this.event = event;
@@ -72,11 +77,11 @@ public class Invite {
         this.event = event;
     }
 
-    public String getStatus() {
+    public InviteStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(InviteStatus status) {
         this.status = status;
     }
 

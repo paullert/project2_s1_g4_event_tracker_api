@@ -12,13 +12,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface InviteRepository extends JpaRepository<Invite, Long> {
     //the spring data jpa can automatically implement the method
     //gets all invitation records given the userid
-    Page<Invite> findByUserId(Long userId, Pageable pageable);
+    Page<Invite> findByUser_UserId(Long userId, Pageable pageable);
 
-    long countByEventIdAndStatus(Long eventId, String status);
+    long countByEvent_IdAndStatus(Long eventId, String status);
 
-    Page<Invite> findByEventId(Long eventId, Pageable pageable);
+    Page<Invite> findByEvent_Id(Long eventId, Pageable pageable);
 
-    Invite findByEventIdAndUserId(Long userId, Long eventId);
+    Optional<Invite> findByUser_UserIdAndEvent_Id(Long userId, Long eventId);
 
-    boolean existsByUserIdAndEventId(Long userId, Long eventId);
+    boolean existsByUser_UserIdAndEvent_Id(Long userId, Long eventId);
 }

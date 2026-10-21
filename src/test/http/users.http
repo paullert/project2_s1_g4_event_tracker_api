@@ -1,0 +1,16 @@
+### List of user
+GET {{baseUrl}}/api/v1/users
+Authorization: Bearer {{token}}
+
+### List a user's invites
+GET {{baseUrl}}/api/v1/users/{{userId}}/invites
+Authorization: Bearer {{token}}
+
+### Respond to an invite: currently returns 501 until authentication is implemented
+PATCH {{baseUrl}}/api/v1/users/me/invites/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ACCEPTED"
+}

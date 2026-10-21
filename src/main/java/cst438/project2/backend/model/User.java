@@ -1,11 +1,5 @@
 package cst438.project2.backend.model;
 
-import java.time.LocalDateTime;
-
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
@@ -27,6 +25,9 @@ public class User {
 
   @Column(name = "username", nullable = false, unique = true, length = 255)
   private String username;
+
+  @Column(name = "google_subject", unique = true, nullable = false, length = 255)
+  private String googleSubject;
 
   // Enums need special annotations
   @Enumerated(EnumType.STRING)
@@ -45,8 +46,22 @@ public class User {
   public User() {
   }
 
+  public User(Long userId, String username, String googleSubject, UserRole role,
+      LocalDateTime createdAt, LocalDateTime updatedAt) {
+    this.userId = userId;
+    this.username = username;
+    this.googleSubject = googleSubject;
+    this.role = role;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+  }
+
   public Long getUserId() {
     return userId;
+  }
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
   }
 
   public String getUsername() {
@@ -55,6 +70,14 @@ public class User {
 
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String getGoogleSubject() {
+    return googleSubject;
+  }
+
+  public void setGoogleSubject(String googleSubject) {
+    this.googleSubject = googleSubject;
   }
 
   public UserRole getRole() {
@@ -69,7 +92,15 @@ public class User {
     return createdAt;
   }
 
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
   public LocalDateTime getUpdatedAt() {
     return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
   }
 }

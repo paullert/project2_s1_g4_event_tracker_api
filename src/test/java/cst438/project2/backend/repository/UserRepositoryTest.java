@@ -1,10 +1,14 @@
-package cst438.project2.backend.service;
+package cst438.project2.backend.repository;
 
+import static cst438.project2.backend.TestResources.Dates.NOW;
+import static cst438.project2.backend.TestResources.UserValues.GOOGLE_SUBJECTS;
+import static cst438.project2.backend.TestResources.UserValues.USERNAMES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import cst438.project2.backend.model.User;
 
-import cst438.project2.backend.repository.UserRepository;
+import cst438.project2.backend.model.UserRole;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +22,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @SpringBootTest
 @Testcontainers
-class UserRepoTest {
+class UserRepositoryTest {
 
   @Container
   @ServiceConnection
@@ -44,5 +48,25 @@ class UserRepoTest {
 
     assertEquals(20, users.getSize());
     assertEquals(0, users.getNumber());
+  }
+
+  @Test
+  void saveAndRetrieveUser(){
+    User user = new User(
+        null,
+        USERNAMES[0],
+        GOOGLE_SUBJECTS[0],
+        UserRole.USER,
+        NOW,
+        NOW
+    );
+    User saved = userRepository.save(user);
+    assertEquals(USERNAMES[0], saved.getUsername());
+    assertEquals(UserRole.USER, saved.getRole());
+
+    User result = userRepository.findById(saved.getUserId()).orElseThrow(null);
+    assertNotNull(result);
+    assertEquals(USERNAMES[0], result.getUsername());
+    assertEquals(UserRole.USER, result.getRole());
   }
 }

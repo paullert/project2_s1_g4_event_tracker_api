@@ -1,0 +1,6 @@
+### Get the current authenticated user
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Get the current user without a token: should return 401
+GET {{baseUrl}}/auth/me

@@ -1,69 +1,129 @@
 package cst438.project2.backend.controller;
-import cst438.project2.backend.model.Invite;
 
+import cst438.project2.backend.dto.invite.MyInviteRequest;
+import cst438.project2.backend.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-import cst438.project2.backend.dto.InviteResponse;
-import cst438.project2.backend.dto.InviteResponsePatch;
-import cst438.project2.backend.model.User;
+import cst438.project2.backend.dto.invite.InviteResponse;
+import cst438.project2.backend.dto.invite.InviteRequest;
 import cst438.project2.backend.service.InviteService;
-import cst438.project2.backend.service.UserService;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/invites")
 public class InviteController {
+
     private final InviteService inviteService;
     private final UserService userService;
 
-    public InviteController(InviteService inviteService, UserService userService){
+    public InviteController(InviteService inviteService, UserService userService) {
         this.inviteService = inviteService;
         this.userService = userService;
     }
-    @GetMapping("/me/invites")
-    public List<InviteResponse> getMyInvites(
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        User user = getAuthenticatedUser(jwt);
 
-        return inviteService.getInvitesForUser(user.getUserId());
+    // Gets a page of invitations
+    //TODO: Finish
+    // Make admin role only
+    @GetMapping
+    public Page<InviteResponse> getAllInvites(Pageable pageable) {
+        return inviteService.getAllInvites(pageable);
     }
 
-    @PatchMapping("/me/invites/{inviteId}")
-    public Invite respondToMyInvite(
-            @PathVariable Long inviteId,
-            @RequestBody InviteResponsePatch request,
-            @AuthenticationPrincipal Jwt jwt
-    ){
-        User user = getAuthenticatedUser(jwt);
+    // Creates an invitation, provided a userId, and eventId
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public InviteResponse createInvite(@RequestBody InviteRequest request) {
+        return inviteService.createInvite(request);
+    }
 
-        return inviteService.updateInvite(
-                inviteId, user.getUserId(),
-                request.status()
+    // Updates invitation
+    //      Obtains which one based on userID and eventId in request body
+    @PutMapping
+    public InviteResponse putInvite(@RequestBody InviteRequest request) {
+        return inviteService.updateInvite(request);
+    }
+
+    // Partially updates invitation
+    //      Obtains which one based on userID and eventId in request body
+    @PatchMapping
+    public InviteResponse patchInvite(@RequestBody InviteRequest request) {
+        return inviteService.patchInvite(request);
+    }
+
+    //currently users would be able to change the userId, final route should have authentication to know that you are the user you are getting the invite lists for.
+    // TODO: Make admin role only
+    @GetMapping("users/{userId}")
+    public Page<InviteResponse> getUserInvites(
+            @PathVariable Long userId,
+            Pageable pageable
+    ) {
+        return inviteService.getInvitesForUser(userId, pageable);
+    }
+
+    //TODO: Finish
+    // make admin and manager role only
+    @GetMapping("events/{eventId}")
+    public Page<InviteResponse> getEventInvites(@PathVariable Long eventId, Pageable pageable) {
+        return inviteService.getEventInvites(eventId, pageable);
+    }
+
+    //TODO: Finish
+    @GetMapping("users/{userId}/events/{eventId}")
+    public InviteResponse getUserEventInvite(
+            @PathVariable Long userId,
+            @PathVariable Long eventId
+    ) {
+        return inviteService.getInvite(userId, eventId);
+    }
+
+    // TODO: Finish
+    @DeleteMapping("users/{userId}/events/{eventId}")
+    public InviteResponse deleteUserEventInvite(
+            @PathVariable Long userId,
+            @PathVariable Long eventId
+    ) {
+        return null;
+    }
+
+    //TODO: Finish
+    // TODO: Make user role only
+    @GetMapping("me")
+    public Page<InviteResponse> getMyInvites() {
+        throw new ResponseStatusException(
+                HttpStatus.NOT_IMPLEMENTED,
+                "Not implemented yet"
         );
     }
 
-    private User getAuthenticatedUser(Jwt jwt){
-        if(jwt == null){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-        }
+    //TODO: Finish
+    // make user role only
+    @GetMapping("me/{inviteId}")
+    public InviteResponse getMyInvite(
+            @PathVariable Long inviteId,
+            @RequestBody(required = false) Object request
+    ) {
+        throw new ResponseStatusException(
+                HttpStatus.NOT_IMPLEMENTED,
+                "Authentication is not implemented yet"
+        );
+    }
 
-        String email = jwt.getClaimAsString("email");
 
-        if(email == null || email.isBlank()){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email claim missing");
-        }
-
-        return userService.getUserByEmail(email);
+    //TODO: Finish
+    // make user role only
+    @PutMapping("me/{inviteId}")
+    public InviteResponse respondToMyInvite(
+            @PathVariable Long inviteId,
+            @RequestBody MyInviteRequest request
+    ) {
+        throw new ResponseStatusException(
+                HttpStatus.NOT_IMPLEMENTED,
+                "Authentication is not implemented yet"
+        );
     }
 }

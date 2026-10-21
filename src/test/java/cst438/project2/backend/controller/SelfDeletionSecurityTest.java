@@ -36,6 +36,8 @@ class SelfDeletionSecurityTest {
   @MockitoBean private JwtAuthConverter converter;
   @MockitoBean private JwtDecoder decoder;
 
+
+  // Parameterized tests didnt play nice with @Tests, so we had to move it to a separate class
   @ParameterizedTest
   @EnumSource(UserRole.class)
   void registeredUserCanDeleteOnlyTheirOwnAccount(UserRole role) throws Exception {

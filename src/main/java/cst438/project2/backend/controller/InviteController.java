@@ -26,8 +26,6 @@ public class InviteController {
     }
 
     // Gets a page of invitations
-    //TODO: Finish
-    // Make admin role only
     @GetMapping
     public Page<InviteResponse> getAllInvites(Pageable pageable) {
         return inviteService.getInvites(pageable);
@@ -93,11 +91,9 @@ public class InviteController {
     //TODO: Finish
     // TODO: Make user role only
     @GetMapping("me")
-    public Page<InviteResponse> getMyInvites() {
-        throw new ResponseStatusException(
-                HttpStatus.NOT_IMPLEMENTED,
-                "Not implemented yet"
-        );
+    public Page<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
+        Page<InviteResponse> invites = inviteService.getMyInvites(auth, pageable);
+        return invites;
     }
 
     //TODO: Finish

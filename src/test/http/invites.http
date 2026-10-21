@@ -1,6 +1,15 @@
-### List invites for a user
-GET {{baseUrl}}/api/v1/users/{{userId}}/invites
+### List invites (Admin)
+GET {{baseUrl}}/api/v1/invites
 Authorization: Bearer {{token}}
+
+### List My Invites
+GET {{baseUrl}}/api/v1/invites/me
+Authorization: Bearer {{token}}
+
+### Get One of My Invites
+GET {{baseUrl}}/api/v1/invites/1
+Authorization: Bearer {{token}}
+
 
 ### Respond to an invite
 ### This currently returns 501 until authentication is implemented.

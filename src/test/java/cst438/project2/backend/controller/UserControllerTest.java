@@ -67,7 +67,7 @@ class UserControllerTest {
 
   @Test
   void updateUserDelegatesToServiceAndMapsResponse() {
-    UserRequest request = new UserRequest("updated-user", UserRole.ADMIN);
+    UserRequest request = new UserRequest("updated-user", null, UserRole.ADMIN);
     when(userService.updateUser(USER_ID, request)).thenReturn(user);
 
     UserResponse result = userController.updateUser(USER_ID, request);

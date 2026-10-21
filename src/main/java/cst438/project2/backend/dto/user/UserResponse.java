@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public record UserResponse(
     Long userId,
     String username,
+    String email,
     UserRole role,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
@@ -16,6 +17,7 @@ public record UserResponse(
     return new UserResponse(
         user.getUserId(),
         user.getUsername(),
+        user.getEmail(),
         user.getRole(),
         user.getCreatedAt(),
         user.getUpdatedAt()

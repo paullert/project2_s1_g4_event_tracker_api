@@ -200,6 +200,55 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/v1/events/{eventId}/managers/{managerId}:
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: managerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    put:
+      tags: [Events, Admin]
+      operationId: assignEventManager
+      summary: Assign a manager to an event (admin only)
+      description: |
+        Multiple managers may share an event. The assigned user must have the
+        MANAGER role. Repeating an existing assignment leaves it unchanged.
+        Assigned managers can edit or delete the event and manage its invites.
+        A manager who creates a new event is assigned automatically.
+      responses:
+        '204':
+          description: Manager assigned
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Events, Admin]
+      operationId: removeEventManager
+      summary: Remove a manager assignment (admin only)
+      description: Removing an absent assignment also succeeds.
+      responses:
+        '204':
+          description: Manager assignment removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/v1/events/{eventId}/totalAttendees:
     parameters:
       - $ref: '#/components/parameters/EventId'

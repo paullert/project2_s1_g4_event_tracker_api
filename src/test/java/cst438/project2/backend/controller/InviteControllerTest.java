@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,6 +30,7 @@ class InviteControllerTest {
 
   @Mock private InviteService inviteService;
   @Mock private UserService userService;
+  @Mock private Authentication authentication;
 
   private InviteController controller;
   private Pageable pageable;
@@ -48,38 +50,38 @@ class InviteControllerTest {
 
   @Test
   void getAllInvitesDelegatesToService() {
-    when(inviteService.getAllInvites(pageable)).thenReturn(page);
+    when(inviteService.getInvites(pageable)).thenReturn(page);
 
     assertEquals(page, controller.getAllInvites(pageable));
 
-    verify(inviteService).getAllInvites(pageable);
+    verify(inviteService).getInvites(pageable);
   }
 
   @Test
   void createInviteDelegatesToService() {
-    when(inviteService.createInvite(request)).thenReturn(response);
+    when(inviteService.createInvite(authentication, request)).thenReturn(response);
 
-    assertEquals(response, controller.createInvite(request));
+    assertEquals(response, controller.createInvite(authentication, request));
 
-    verify(inviteService).createInvite(request);
+    verify(inviteService).createInvite(authentication, request);
   }
 
   @Test
   void putInviteDelegatesToService() {
-    when(inviteService.updateInvite(request)).thenReturn(response);
+    when(inviteService.updateInvite(authentication, request)).thenReturn(response);
 
-    assertEquals(response, controller.putInvite(request));
+    assertEquals(response, controller.putInvite(authentication, request));
 
-    verify(inviteService).updateInvite(request);
+    verify(inviteService).updateInvite(authentication, request);
   }
 
   @Test
   void patchInviteDelegatesToService() {
-    when(inviteService.patchInvite(request)).thenReturn(response);
+    when(inviteService.patchInvite(authentication, request)).thenReturn(response);
 
-    assertEquals(response, controller.patchInvite(request));
+    assertEquals(response, controller.patchInvite(authentication, request));
 
-    verify(inviteService).patchInvite(request);
+    verify(inviteService).patchInvite(authentication, request);
   }
 
   @Test
@@ -93,20 +95,20 @@ class InviteControllerTest {
 
   @Test
   void getEventInvitesDelegatesToService() {
-    when(inviteService.getEventInvites(20L, pageable)).thenReturn(page);
+    when(inviteService.getEventInvites(authentication, 20L, pageable)).thenReturn(page);
 
-    assertEquals(page, controller.getEventInvites(20L, pageable));
+    assertEquals(page, controller.getEventInvites(authentication, 20L, pageable));
 
-    verify(inviteService).getEventInvites(20L, pageable);
+    verify(inviteService).getEventInvites(authentication, 20L, pageable);
   }
 
   @Test
   void getUserEventInviteDelegatesToService() {
-    when(inviteService.getInvite(7L, 20L)).thenReturn(response);
+    when(inviteService.getInvite(authentication, 7L, 20L)).thenReturn(response);
 
-    assertEquals(response, controller.getUserEventInvite(7L, 20L));
+    assertEquals(response, controller.getUserEventInvite(authentication, 7L, 20L));
 
-    verify(inviteService).getInvite(7L, 20L);
+    verify(inviteService).getInvite(authentication, 7L, 20L);
   }
 
   @Test

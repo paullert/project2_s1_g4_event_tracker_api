@@ -7,6 +7,9 @@ import cst438.project2.backend.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 
 public interface InviteRepository extends JpaRepository<Invite, Long> {
@@ -21,4 +24,8 @@ public interface InviteRepository extends JpaRepository<Invite, Long> {
     Optional<Invite> findByUser_UserIdAndEvent_Id(Long userId, Long eventId);
 
     boolean existsByUser_UserIdAndEvent_Id(Long userId, Long eventId);
+
+    @Modifying
+    @Query("delete from Invite invite where invite.event.id = :eventId")
+    void deleteForEvent(@Param("eventId") Long eventId);
 }

@@ -31,6 +31,7 @@ class InviteServiceTest {
   @Mock private UserRepository userRepository;
   @Mock private EventRepository eventRepository;
   @Mock private Authentication authentication;
+  @Mock private EventOwnershipService ownership;
 
   private InviteService inviteService;
   private User user;
@@ -38,7 +39,7 @@ class InviteServiceTest {
 
   @BeforeEach
   void setUp() {
-    inviteService = new InviteService(inviteRepository, userService, userRepository, eventRepository);
+    inviteService = new InviteService(inviteRepository, userService, userRepository, eventRepository, ownership);
     user = new User(USER_ID, "test-user", "google-subject", null, null, null);
     event = new Event(EVENT_ID, "Test Event", "Description", INVITED_AT.plusDays(1), USER_ID, null, null);
   }
@@ -66,7 +67,7 @@ class InviteServiceTest {
   void getAllInvitesMapsRepositoryPage() {
     Pageable pageable = PageRequest.of(0, 10);
     when(inviteRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(invite(InviteStatus.PENDING, null)), pageable, 1));
-    assertEquals(1, inviteService.getAllInvites(pageable).getTotalElements());
+    assertEquals(1, inviteService.getInvites(pageable).getTotalElements());
     verify(inviteRepository).findAll(pageable);
   }
 
@@ -74,7 +75,7 @@ class InviteServiceTest {
   void getEventInvitesUsesEventFilter() {
     Pageable pageable = PageRequest.of(0, 10);
     when(inviteRepository.findByEvent_Id(EVENT_ID, pageable)).thenReturn(new PageImpl<>(List.of(invite(InviteStatus.PENDING, null))));
-    assertEquals(1, inviteService.getEventInvites(EVENT_ID, pageable).getNumberOfElements());
+    assertEquals(1, inviteService.getEventInvites(authentication, EVENT_ID, pageable).getNumberOfElements());
     verify(inviteRepository).findByEvent_Id(EVENT_ID, pageable);
   }
 
@@ -86,15 +87,17 @@ class InviteServiceTest {
 
   @Test
   void getInviteReturnsMappedInvite() {
+    when(userService.findUserFromAuthentication(authentication)).thenReturn(user);
     Invite invite = invite(InviteStatus.PENDING, null);
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
-    assertEquals(EVENT_ID, inviteService.getInvite(USER_ID, EVENT_ID).eventId());
+    assertEquals(EVENT_ID, inviteService.getInvite(authentication, USER_ID, EVENT_ID).eventId());
   }
 
   @Test
   void getMissingInviteReturnsNotFound() {
+    when(userService.findUserFromAuthentication(authentication)).thenReturn(user);
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.empty());
-    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> inviteService.getInvite(USER_ID, EVENT_ID));
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> inviteService.getInvite(authentication, USER_ID, EVENT_ID));
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
   }
 
@@ -103,7 +106,7 @@ class InviteServiceTest {
     Invite invite = invite(InviteStatus.PENDING, "old message");
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
     when(inviteRepository.save(invite)).thenReturn(invite);
-    InviteResponse result = inviteService.updateInvite(new InviteRequest(USER_ID, EVENT_ID, "ACCEPTED", "new message"));
+    InviteResponse result = inviteService.updateInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, "ACCEPTED", "new message"));
     assertEquals("ACCEPTED", result.status());
     assertEquals(InviteStatus.ACCEPTED, invite.getStatus());
     assertEquals("new message", invite.getMessage());
@@ -114,7 +117,7 @@ class InviteServiceTest {
   @Test
   void updateInviteRejectsMissingRequiredFields() {
     ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> inviteService.updateInvite(new InviteRequest(null, EVENT_ID, "ACCEPTED", "message")));
+        () -> inviteService.updateInvite(authentication, new InviteRequest(null, EVENT_ID, "ACCEPTED", "message")));
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     verify(inviteRepository, never()).save(any());
   }
@@ -124,7 +127,7 @@ class InviteServiceTest {
     Invite invite = invite(InviteStatus.ACCEPTED, "message");
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
     ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> inviteService.updateInvite(new InviteRequest(USER_ID, EVENT_ID, "DECLINED", "message")));
+        () -> inviteService.updateInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, "DECLINED", "message")));
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     verify(inviteRepository, never()).save(any());
   }
@@ -134,7 +137,7 @@ class InviteServiceTest {
     Invite invite = invite(InviteStatus.PENDING, "message");
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
     ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-        () -> inviteService.updateInvite(new InviteRequest(USER_ID, EVENT_ID, "UNKNOWN", "message")));
+        () -> inviteService.updateInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, "UNKNOWN", "message")));
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     verify(inviteRepository, never()).save(any());
   }
@@ -144,7 +147,7 @@ class InviteServiceTest {
     Invite invite = invite(InviteStatus.PENDING, "old message");
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
     when(inviteRepository.save(invite)).thenReturn(invite);
-    InviteResponse result = inviteService.patchInvite(new InviteRequest(USER_ID, EVENT_ID, null, "new message"));
+    InviteResponse result = inviteService.patchInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, null, "new message"));
     assertEquals("PENDING", result.status());
     assertEquals("new message", invite.getMessage());
     assertEquals(InviteStatus.PENDING, invite.getStatus());
@@ -157,17 +160,17 @@ class InviteServiceTest {
     Invite invite = invite(InviteStatus.PENDING, null);
     when(inviteRepository.findByUser_UserIdAndEvent_Id(USER_ID, EVENT_ID)).thenReturn(Optional.of(invite));
     when(inviteRepository.save(invite)).thenReturn(invite);
-    inviteService.patchInvite(new InviteRequest(USER_ID, EVENT_ID, "ACCEPTED", null));
+    inviteService.patchInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, "ACCEPTED", null));
     assertEquals(InviteStatus.ACCEPTED, invite.getStatus());
     assertNotNull(invite.getRespondedAt());
   }
 
   @Test
   void createInviteDefaultsStatusToPending() {
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(user);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
     when(inviteRepository.save(any(Invite.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    InviteResponse result = inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, "Welcome"));
+    InviteResponse result = inviteService.createInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, null, "Welcome"));
     assertEquals("PENDING", result.status());
     assertEquals(USER_ID, result.userId());
     verify(inviteRepository).save(any(Invite.class));
@@ -175,14 +178,14 @@ class InviteServiceTest {
 
   @Test
   void createInviteReturnsNotFoundForMissingUserOrEvent() {
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(null);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
     ResponseStatusException missingUser = assertThrows(ResponseStatusException.class,
-        () -> inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, null)));
+        () -> inviteService.createInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, null, null)));
     assertEquals(HttpStatus.NOT_FOUND, missingUser.getStatusCode());
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(user);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.empty());
     ResponseStatusException missingEvent = assertThrows(ResponseStatusException.class,
-        () -> inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, null)));
+        () -> inviteService.createInvite(authentication, new InviteRequest(USER_ID, EVENT_ID, null, null)));
     assertEquals(HttpStatus.NOT_FOUND, missingEvent.getStatusCode());
   }
 

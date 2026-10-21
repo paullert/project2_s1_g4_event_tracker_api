@@ -7,6 +7,7 @@ import cst438.project2.backend.service.InviteService;
 import cst438.project2.backend.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,8 +30,8 @@ public class EventController {
 
     // TODO: Finish this
     @PostMapping
-    public EventResponse createEvent(@RequestBody EventRequest eventRequest) {
-        return eventService.createEvent(eventRequest);
+    public EventResponse createEvent(Authentication auth, @RequestBody EventRequest eventRequest) {
+        return eventService.createEvent(auth, eventRequest);
     }
 
     // TODO: Finish this
@@ -41,20 +42,20 @@ public class EventController {
 
     // TODO: Finish this
     @PutMapping("/{eventId}")
-    public EventResponse putEvent(@PathVariable Long eventId, @RequestBody EventRequest request) {
-        return eventService.putEvent(eventId, request);
+    public EventResponse putEvent(Authentication auth, @PathVariable Long eventId, @RequestBody EventRequest request) {
+        return eventService.putEvent(auth, eventId, request);
     }
 
     // TODO: Finish this
     @PatchMapping("/{eventId}")
-    public EventResponse patchEvent(@PathVariable Long eventId, @RequestBody EventRequest eventRequest) {
-        return eventService.patchEvent(eventId, eventRequest);
+    public EventResponse patchEvent(Authentication auth, @PathVariable Long eventId, @RequestBody EventRequest eventRequest) {
+        return eventService.patchEvent(auth, eventId, eventRequest);
     }
 
     // TODO: Finish this
     @DeleteMapping("/{eventId}")
-    public void deleteEvent(@PathVariable Long eventId) {
-        eventService.deleteEvent(eventId);
+    public void deleteEvent(Authentication auth, @PathVariable Long eventId) {
+        eventService.deleteEvent(auth, eventId);
     }
 
     @GetMapping("/{eventId}/totalAttendees")

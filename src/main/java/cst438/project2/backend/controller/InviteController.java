@@ -5,10 +5,9 @@ import cst438.project2.backend.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 import cst438.project2.backend.dto.invite.InviteResponse;
 import cst438.project2.backend.dto.invite.InviteRequest;
@@ -31,28 +30,28 @@ public class InviteController {
     // Make admin role only
     @GetMapping
     public Page<InviteResponse> getAllInvites(Pageable pageable) {
-        return inviteService.getAllInvites(pageable);
+        return inviteService.getInvites(pageable);
     }
 
     // Creates an invitation, provided a userId, and eventId
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public InviteResponse createInvite(@RequestBody InviteRequest request) {
-        return inviteService.createInvite(request);
+    public InviteResponse createInvite(Authentication auth, @RequestBody InviteRequest request) {
+        return inviteService.createInvite(auth, request);
     }
 
     // Updates invitation
     //      Obtains which one based on userID and eventId in request body
     @PutMapping
-    public InviteResponse putInvite(@RequestBody InviteRequest request) {
-        return inviteService.updateInvite(request);
+    public InviteResponse putInvite(Authentication auth, @RequestBody InviteRequest request) {
+        return inviteService.updateInvite(auth, request);
     }
 
     // Partially updates invitation
     //      Obtains which one based on userID and eventId in request body
     @PatchMapping
-    public InviteResponse patchInvite(@RequestBody InviteRequest request) {
-        return inviteService.patchInvite(request);
+    public InviteResponse patchInvite(Authentication auth, @RequestBody InviteRequest request) {
+        return inviteService.patchInvite(auth, request);
     }
 
     //currently users would be able to change the userId, final route should have authentication to know that you are the user you are getting the invite lists for.
@@ -68,17 +67,18 @@ public class InviteController {
     //TODO: Finish
     // make admin and manager role only
     @GetMapping("events/{eventId}")
-    public Page<InviteResponse> getEventInvites(@PathVariable Long eventId, Pageable pageable) {
-        return inviteService.getEventInvites(eventId, pageable);
+    public Page<InviteResponse> getEventInvites(Authentication auth, @PathVariable Long eventId, Pageable pageable) {
+        return inviteService.getEventInvites(auth, eventId, pageable);
     }
 
     //TODO: Finish
     @GetMapping("users/{userId}/events/{eventId}")
     public InviteResponse getUserEventInvite(
+            Authentication auth,
             @PathVariable Long userId,
             @PathVariable Long eventId
     ) {
-        return inviteService.getInvite(userId, eventId);
+        return inviteService.getInvite(auth, userId, eventId);
     }
 
     // TODO: Finish

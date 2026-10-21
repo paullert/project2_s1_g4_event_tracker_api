@@ -26,6 +26,13 @@ public class User {
   @Column(name = "username", nullable = false, unique = true, length = 255)
   private String username;
 
+  @Column(name = "email", nullable = false, unique = true, length = 255)
+  private String email;
+
+  public String getEmail() {
+    return email;
+  }
+
   @Column(name = "google_subject", unique = true, nullable = false, length = 255)
   private String googleSubject;
 
@@ -102,5 +109,9 @@ public class User {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
   }
 }

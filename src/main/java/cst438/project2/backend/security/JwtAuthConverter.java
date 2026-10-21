@@ -26,22 +26,24 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
 
   @Override
   public AbstractAuthenticationToken convert(Jwt jwt) {
+    List<GrantedAuthority> authorities = new ArrayList<>();
     String googleSubject = jwt.getSubject();
 
+    // Find user by internal google id
     User user = userRepository.findByGoogleSubject(googleSubject).orElse(null);
 
-    if (user == null) {
-      throw new BadCredentialsException("Google user is not registered");
-    }
-
-    List<GrantedAuthority> authorities = new ArrayList<>();
-
-    if (user.getRole() != null) {
+    // If the user is registered with our app, add their role to the authorities
+    //
+    if (user != null) {
       authorities.add(
-          new SimpleGrantedAuthority("ROLE_" + user.getRole())
+          new SimpleGrantedAuthority(
+              "ROLE_%s".formatted(user.getRole().name()
+              )
+          )
       );
     }
 
+    // If the user is not registered with our app, give no roles
     return new JwtAuthenticationToken(
         jwt,
         authorities,

@@ -33,6 +33,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -131,7 +132,7 @@ class EventControllerTest {
   @Test
   void putEventReplacesEvent() throws Exception {
 
-    when(eventService.putEvent(any(Long.class), any(EventRequest.class)))
+    when(eventService.putEvent(any(Authentication.class), any(Long.class), any(EventRequest.class)))
         .thenReturn(EventResponse.init(event));
 
     mockMvc.perform(
@@ -163,7 +164,7 @@ class EventControllerTest {
 
   @Test
   void putEventReturnsBadRequestWhenARequiredFieldIsMissing() throws Exception {
-    when(eventService.putEvent(any(Long.class), any(EventRequest.class)))
+    when(eventService.putEvent(any(Authentication.class), any(Long.class), any(EventRequest.class)))
         .thenThrow(new BadRequestException(badReqMsg));
 
     mockMvc.perform(
@@ -188,7 +189,7 @@ class EventControllerTest {
 
   @Test
   void putEventReturnsNotFoundWhenIdDoesNotExist() throws Exception {
-    when(eventService.putEvent(any(Long.class), any(EventRequest.class)))
+    when(eventService.putEvent(any(Authentication.class), any(Long.class), any(EventRequest.class)))
         .thenThrow(new NotFoundException(INVALID_REQUEST_ID, "Event"));
 
     mockMvc.perform(

@@ -142,7 +142,7 @@ VALUES ('admin_demo_1', 'ADMIN', '2026-10-07 21:27:35.759411', '2026-10-07 21:27
     ( 'billy_demo', 'USER', '2026-10-07 21:27:35.759411', '2026-10-07 21:27:35.759411', NULL);
 
 INSERT INTO "users" ("username", "email", "role", "created_at", "updated_at", "google_subject")
-VALUES ('Paul Conner', 'pconner@csumb.edu', 'USER', '2026-10-18 20:23:28.017612',
+VALUES ('Paul Conner', 'pconner@csumb.edu', 'ADMIN', '2026-10-18 20:23:28.017612',
      '2026-10-18 20:44:53.79394', '105833221196775885215');
 
 INSERT INTO "locations" ("location_name", "address", "location_desc", "created_at", "updated_at",

@@ -1,15 +1,12 @@
 package cst438.project2.backend.model;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "events")
@@ -17,12 +14,13 @@ public class Event {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "event_id")
     private Long id;
 
     @Column(name = "event_name")
     private String eventName;
 
-    @Column(name = "event_description")
+    @Column(name = "event_desc")
     private String eventDescription;
 
     @Column(name = "starts_on")

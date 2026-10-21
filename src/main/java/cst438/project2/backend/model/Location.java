@@ -42,11 +42,14 @@ public class Location {
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
 
-  public Location(String name, String adr, String desc, User creator) {
+  public Location(Long locationId, String name, String adr, String desc, User creator, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    this.locationId = locationId;
     this.locationName = name;
     this.address = adr;
     this.locationDescription = desc;
     this.creator = creator;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
   }
 
   public Location() {}

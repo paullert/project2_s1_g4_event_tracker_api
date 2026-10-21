@@ -1,11 +1,5 @@
 package cst438.project2.backend.model;
 
-import java.time.LocalDateTime;
-
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
@@ -46,6 +44,16 @@ public class User {
   private LocalDateTime updatedAt;
 
   public User() {
+  }
+
+  public User(Long userId, String username, String googleSubject, UserRole role,
+      LocalDateTime createdAt, LocalDateTime updatedAt) {
+    this.userId = userId;
+    this.username = username;
+    this.googleSubject = googleSubject;
+    this.role = role;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
   }
 
   public Long getUserId() {

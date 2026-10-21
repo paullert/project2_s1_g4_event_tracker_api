@@ -44,16 +44,14 @@ public class LocationService {
   public Location createLocation(LocationCreate locationReq, Authentication userAuth) {
     User creator = userService.findUserFromAuthentication(userAuth);
     Location location = new Location(
+        null,
         locationReq.locationName(),
         locationReq.address(),
         locationReq.locationDescription(),
-        creator
+        creator,
+        null,
+        null
     );
-    return locationRepository.save(location);
-  }
-
-  //TODO: possibly Remove
-  public Location saveLocation(Location location) {
     return locationRepository.save(location);
   }
 
@@ -81,8 +79,7 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
-  public Location deleteLocation(Location location) {
+  public void deleteLocation(Location location) {
     locationRepository.delete(location);
-    return location;
   }
 }

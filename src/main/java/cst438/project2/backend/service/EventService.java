@@ -4,6 +4,7 @@ package cst438.project2.backend.service;
 import cst438.project2.backend.dto.event.EventRequest;
 import cst438.project2.backend.dto.event.EventResponse;
 import cst438.project2.backend.exceptions.BadRequestException;
+import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Event;
 import cst438.project2.backend.repository.EventRepository;
 import org.springframework.data.domain.Page;
@@ -26,8 +27,8 @@ public class EventService {
 
     // TODO: Second pass this
     public EventResponse getEvent(Long eventId) {
-        Event event = eventRepository.findById(eventId).orElse(null); // TODO: fix error handling
-        return EventResponse.init(eventRepository.findById(eventId).orElse(null));
+        return EventResponse.init(eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(eventId, "Event")));
     }
 
     // TODO: Second pass this
@@ -52,21 +53,28 @@ public class EventService {
 
     // TODO: Second Pass this
     public EventResponse putEvent(Long eventId, EventRequest request) {
-        Event event = eventRepository.findById(eventId)
-                .orElse(null);
         if ( request.eventDescription() == null ||
         request.eventName() == null ||
         request.locationId() == null ||
         request.startsOn() == null) {
-            throw new BadRequestException("Missing 1 or more required fields: eventId, eventDescription, eventName, locationId, startsOn");
+            throw new BadRequestException("Missing 1 or more required fields: eventName, eventDescription, startsOn, creatorId, locationId");
         }
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(eventId, "Event"));
+        event.setEventName(request.eventName());
+        event.setEventDescription(request.eventDescription());
+        event.setStartsOn(request.startsOn());
+        if (request.creatorId() != null) {
+            event.setCreatorId(request.creatorId());
+        }
+        event.setLocationId(request.locationId());
         return EventResponse.init(eventRepository.save(event));
     }
 
     // TODO: Second Pass this
     public EventResponse patchEvent(Long eventId, EventRequest request) {
         Event event = eventRepository.findById(eventId)
-                .orElse(null); // Find Better Exception Handling
+                .orElseThrow(() -> new NotFoundException(eventId, "Event"));
         if (request.eventName() != null) {
             event.setEventName(request.eventName());
         }

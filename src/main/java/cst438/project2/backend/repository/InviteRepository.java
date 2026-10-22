@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import cst438.project2.backend.model.InviteId;
 
 
 public interface InviteRepository extends JpaRepository<Invite, InviteId> {

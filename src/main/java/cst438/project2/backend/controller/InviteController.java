@@ -2,6 +2,8 @@ package cst438.project2.backend.controller;
 
 import cst438.project2.backend.dto.invite.MyInviteRequest;
 import cst438.project2.backend.service.UserService;
+import java.util.List;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
@@ -12,9 +14,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+
 import cst438.project2.backend.dto.invite.InviteResponse;
 import cst438.project2.backend.dto.invite.InviteRequest;
 import cst438.project2.backend.service.InviteService;
+import cst438.project2.backend.dto.invite.EventInviteRequest;
 
 @RestController
 @RequestMapping("/api/v1/invites")
@@ -76,13 +80,23 @@ public class InviteController {
         return new PagedModel<>(inviteService.getInvitesForUser(userId, pageable));
     }
 
-    //TODO: Finish
     @GetMapping("events/{eventId}")
     public PagedModel<InviteResponse> getEventInvites(Authentication auth, @PathVariable Long eventId, Pageable pageable) {
         return new PagedModel<>(inviteService.getEventInvites(auth, eventId, pageable));
     }
 
-    //TODO: Finish
+    // creates invites for multiple users at one event
+    @PostMapping("events/{eventId}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<InviteResponse> createEventInvites(
+            @PathVariable Long eventId,
+            @RequestBody EventInviteRequest request
+    ) {
+        return inviteService.createEventInvites(eventId, request.userIds());
+    }
+
+
+
     @GetMapping("users/{userId}/events/{eventId}")
     public InviteResponse getUserEventInvite(
             @PathVariable Long userId,
@@ -107,27 +121,25 @@ public class InviteController {
         inviteService.deleteInvite(auth, userId, eventId);
     }
 
-    //TODO: Finish
-    // TODO: Make user role only
     @GetMapping("me")
-    public PagedModel<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
-        return new PagedModel<>(inviteService.getMyInvites(auth, pageable));
+    public Page<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
+        return inviteService.getMyInvites(auth,pageable);
     }
 
     @GetMapping("me/{eventId}")
     public InviteResponse getMyInvite(
-        Authentication auth,
-        @PathVariable Long eventId
+            @PathVariable Long eventId,
+            Authentication auth
     ) {
-      return inviteService.getMyInvite( auth, eventId);
+       return inviteService.getMyInvite(auth,eventId);
     }
 
 
-    @RequestMapping(value = "me/{eventId}", method = {RequestMethod.PATCH, RequestMethod.PUT})
+    @PutMapping("me/{eventId}")
     public InviteResponse respondToMyInvite(
-            Authentication auth,
             @PathVariable Long eventId,
-            @RequestBody MyInviteRequest request
+            @RequestBody MyInviteRequest request,
+            Authentication auth
     ) {
         return inviteService.respondToMyInvite(auth, eventId, request);
     }

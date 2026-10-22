@@ -5,6 +5,13 @@ import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import cst438.project2.backend.dto.invite.InviteRequest;
 import cst438.project2.backend.dto.invite.InviteResponse;
@@ -23,6 +30,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import cst438.project2.backend.dto.invite.EventInviteRequest;
 
 @WebMvcTest(InviteController.class)
 @Import(SecurityConfig.class)
@@ -69,6 +81,30 @@ class InviteControllerTest {
   }
 
   @Test
+  void createEventInvitesDelegatesToService() {
+    // creates a request containing multiple users
+    EventInviteRequest request = new EventInviteRequest(
+            java.util.List.of(7L, 8L)
+    );
+
+    // creates the expected service response
+    java.util.List<InviteResponse> responses = java.util.List.of(response);
+
+    // connects the controller call to the service response
+    when(inviteService.createEventInvites(20L, request.userIds()))
+            .thenReturn(responses);
+
+    // confirms that the controller returns the service response
+    assertEquals(
+            responses,
+            controller.createEventInvites(20L, request)
+    );
+
+    // confirms that the service received the event and user ids
+    verify(inviteService).createEventInvites(20L, request.userIds());
+  }
+
+  @Test
   void patchInvitationPreservesUnspecifiedFieldsAsNull() throws Exception {
     var request = new InviteRequest(7L, 20L, null, "Updated message");
     when(invites.patchInvite(any(), eq(request))).thenReturn(response);
@@ -79,6 +115,23 @@ class InviteControllerTest {
   }
 
   @Test
+  void getMyInvitesDelegatesToService() {
+    Authentication auth = mock(Authentication.class);
+
+    when(inviteService.getMyInvites(auth,pageable)).thenReturn(page);
+
+    assertEquals(page, controller.getMyInvites(auth,pageable));
+    verify(inviteService).getMyInvites(auth,pageable);
+  }
+
+  @Test
+  void getMyInviteDelegatesToService() {
+    Authentication auth = mock(Authentication.class);
+
+    when(inviteService.getMyInvite(auth,20L)).thenReturn(response);
+
+    assertEquals(response, controller.getMyInvite(20L, auth));
+    verify(inviteService).getMyInvite(auth,20L);
   void invitationRoutesRequireAuthentication() throws Exception {
     mvc.perform(post("/api/v1/invites")
         .contentType(MediaType.APPLICATION_JSON).content(INVITATION))
@@ -86,4 +139,14 @@ class InviteControllerTest {
     verifyNoInteractions(invites);
   }
 
+  @Test
+  void respondToMyInviteDelegatesToService() {
+    Authentication auth = mock(Authentication.class);
+    MyInviteRequest myRequest = new MyInviteRequest("ACCEPTED");
+
+    when(inviteService.respondToMyInvite(auth, 20L, myRequest)).thenReturn(response);
+
+    assertEquals(response, controller.respondToMyInvite(20L, myRequest, auth));
+    verify(inviteService).respondToMyInvite(auth, 20L, myRequest);
+  }
 }

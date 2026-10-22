@@ -43,7 +43,7 @@ CREATE TABLE "users"
     "email"          varchar(255) UNIQUE,
     "google_subject" varchar(255) UNIQUE,
     "role"           user_role           NOT NULL DEFAULT 'USER'::user_role,
-    "created_at"     timestamp           NOT NULL DEFAULT (now()),
+    "created_at"     timestamp           NOT NULL DEFAULT now(),
     "updated_at"     timestamp
 );
 
@@ -60,7 +60,7 @@ CREATE TABLE "invites"
     "user_id"      integer         NOT NULL,
     "status"       invite_response NOT NULL DEFAULT 'PENDING',
     "message"      text,
-    "invited_at"   timestamp       NOT NULL DEFAULT (now()),
+    "invited_at"   timestamp       NOT NULL DEFAULT now(),
     "responded_at" timestamp,
     PRIMARY KEY ("event_id", "user_id")
 );
@@ -169,4 +169,28 @@ VALUES (6, 1, 'ACCEPTED', '2026-10-07 21:44:13.778439', '2026-10-08T10:00:00'),
        (8, 2, 'PENDING', '2026-10-07 21:44:13.778439', NULL);
 
 SET CONSTRAINTS ALL IMMEDIATE;
+COMMIT;
+
+BEGIN;
+-- Synchronize identity sequences
+
+SELECT setval(
+    pg_get_serial_sequence('users', 'user_id'),
+    COALESCE((SELECT MAX("user_id") FROM "users"), 1),
+    EXISTS(SELECT 1 FROM "users")
+);
+
+
+SELECT setval(
+    pg_get_serial_sequence('locations', 'location_id'),
+    COALESCE((SELECT MAX("location_id") FROM "locations"), 1),
+    EXISTS(SELECT 1 FROM "locations")
+);
+
+
+SELECT setval(
+    pg_get_serial_sequence('events', 'event_id'),
+    COALESCE((SELECT MAX("event_id") FROM "events"), 1),
+    EXISTS(SELECT 1 FROM "events")
+);
 COMMIT;

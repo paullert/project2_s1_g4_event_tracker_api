@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import cst438.project2.backend.dto.invite.InviteResponse;
 import cst438.project2.backend.dto.invite.InviteRequest;
 import cst438.project2.backend.service.InviteService;
+import cst438.project2.backend.dto.invite.EventInviteRequest;
 
 @RestController
 @RequestMapping("/api/v1/invites")
@@ -69,6 +70,18 @@ public class InviteController {
     public Page<InviteResponse> getEventInvites(@PathVariable Long eventId, Pageable pageable) {
         return inviteService.getEventInvites(eventId, pageable);
     }
+
+    // creates invites for multiple users at one event
+    @PostMapping("events/{eventId}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<InviteResponse> createEventInvites(
+            @PathVariable Long eventId,
+            @RequestBody EventInviteRequest request
+    ) {
+        return inviteService.createEventInvites(eventId, request.userIds());
+    }
+
+
 
     //TODO: Finish
     @GetMapping("users/{userId}/events/{eventId}")

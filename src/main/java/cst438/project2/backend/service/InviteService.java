@@ -22,6 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 
 // TODO: review error handling with or else throw
 @Service
@@ -195,6 +199,78 @@ public class InviteService {
     );
     invite = inviteRepository.save(invite);
     return InviteResponse.init(invite);
+  }
+
+  // creates pending invites for multiple users
+  @Transactional
+  public List<InviteResponse> createEventInvites(
+          Long eventId,
+          List<Long> userIds
+  ) {
+    if (eventId == null) {
+      throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST,
+              "event id is required"
+      );
+    }
+
+    if (userIds == null || userIds.isEmpty()) {
+      throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST,
+              "at least one user id is required"
+      );
+    }
+
+    Event event = eventRepository.findById(eventId).orElseThrow(
+            () -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "event not found"
+            )
+    );
+
+    Set<Long> uniqueUserIds = new HashSet<>(userIds);
+
+    if (uniqueUserIds.size() != userIds.size()) {
+      throw new ResponseStatusException(
+              HttpStatus.CONFLICT,
+              "duplicate user ids were included"
+      );
+    }
+
+    LocalDateTime invitedAt = LocalDateTime.now();
+
+    List<Invite> invites = userIds.stream()
+            .map(userId -> {
+              User user = userRepository.findById(userId).orElseThrow(
+                      () -> new ResponseStatusException(
+                              HttpStatus.NOT_FOUND,
+                              "user not found"
+                      )
+              );
+
+              if (inviteRepository.existsByUser_UserIdAndEvent_Id(userId, eventId)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "user already has an invitation for this event"
+                );
+              }
+
+              return new Invite(
+                      new InviteId(userId, eventId),
+                      user,
+                      event,
+                      InviteStatus.PENDING,
+                      null,
+                      invitedAt,
+                      null
+              );
+            })
+            .toList();
+
+    return inviteRepository.saveAll(invites)
+            .stream()
+            .map(InviteResponse::init)
+            .toList();
   }
 
   // Partially Updates an invite

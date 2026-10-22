@@ -44,13 +44,6 @@ public class InviteController {
         return created(inviteService.createInvite(auth, request));
     }
 
-    @PostMapping("events/{eventId}")
-    public ResponseEntity<InviteResponse> createEventInvite(Authentication auth,
-        @PathVariable Long eventId, @RequestBody InviteRequest request) {
-        return created(inviteService.createInvite(auth,
-            new InviteRequest(request.userId(), eventId, request.status(), request.message())));
-    }
-
     private ResponseEntity<InviteResponse> created(InviteResponse invite) {
         URI location = URI.create("/api/v1/invites/users/" + invite.userId() + "/events/" + invite.eventId());
         return ResponseEntity.created(location).body(invite);
@@ -122,8 +115,8 @@ public class InviteController {
     }
 
     @GetMapping("me")
-    public Page<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
-        return inviteService.getMyInvites(auth,pageable);
+    public PagedModel<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
+        return new PagedModel<>(inviteService.getMyInvites(auth, pageable));
     }
 
     @GetMapping("me/{eventId}")
@@ -135,7 +128,7 @@ public class InviteController {
     }
 
 
-    @PutMapping("me/{eventId}")
+    @PatchMapping("me/{eventId}")
     public InviteResponse respondToMyInvite(
             @PathVariable Long eventId,
             @RequestBody MyInviteRequest request,

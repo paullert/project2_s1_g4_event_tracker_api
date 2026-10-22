@@ -318,7 +318,7 @@ public class InviteService {
   // Partially Updates an invite
   //      Finds invite based on body, must provide userId and eventId
   // TODO: Second Pass this
-  public InviteResponse patchInvite(InviteRequest request) {
+  public InviteResponse patchInvite(Authentication auth, InviteRequest request) {
     Long userId = request.userId();
     Long eventId = request.eventId();
     if (userId == null || eventId == null) {

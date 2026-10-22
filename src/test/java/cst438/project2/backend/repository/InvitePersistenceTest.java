@@ -300,7 +300,7 @@ class InvitePersistenceTest {
   private MockHttpServletRequestBuilder inviteRequest(String method, Event event, User target, String message) {
     var request = switch (method) {
       case "GET" -> get("/api/v1/invites/events/" + event.getId());
-      case "POST" -> post("/api/v1/invites/events/" + event.getId());
+      case "POST" -> post("/api/v1/invites");
       case "PUT" -> put("/api/v1/invites");
       case "PATCH" -> patch("/api/v1/invites");
       case "DELETE" -> delete("/api/v1/invites/users/" + target.getUserId() + "/events/" + event.getId());

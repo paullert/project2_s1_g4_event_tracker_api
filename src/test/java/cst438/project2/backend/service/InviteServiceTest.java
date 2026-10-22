@@ -104,10 +104,12 @@ class InviteServiceTest {
 
   @Test
   void createInviteDefaultsStatusToPending() {
+    when(userService.findUserFromAuthentication(authentication)).thenReturn(user);
     when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
     when(inviteRepository.save(any(Invite.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    InviteResponse result = inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, "Welcome"));
+    InviteResponse result = inviteService.createInvite(authentication,
+        new InviteRequest(USER_ID, EVENT_ID, null, "Welcome"));
     assertEquals("PENDING", result.status());
     assertEquals(USER_ID, result.userId());
     verify(inviteRepository).save(any(Invite.class));

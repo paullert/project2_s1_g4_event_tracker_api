@@ -1,7 +1,5 @@
 package cst438.project2.backend.controller;
 
-import cst438.project2.backend.dto.CreationResponse;
-import cst438.project2.backend.dto.DeletionResponse;
 import cst438.project2.backend.dto.location.LocationCreate;
 import cst438.project2.backend.dto.location.LocationPatch;
 import cst438.project2.backend.dto.location.LocationResponse;
@@ -13,7 +11,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import java.net.URI;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +41,7 @@ public class LocationController {
 
   @GetMapping
   @ResponseStatus(HttpStatus.OK)
-  public Page<LocationResponse> getLocations(
+  public PagedModel<LocationResponse> getLocations(
       @PageableDefault(
           size = 20,
           sort = "updatedAt",
@@ -48,22 +49,16 @@ public class LocationController {
       )
       Pageable pageable
   ) {
-    return locationService.getLocations(pageable).map(LocationResponse::init);
+    return new PagedModel<>(locationService.getLocations(pageable).map(LocationResponse::init));
   }
 
   @PostMapping
-  @ResponseStatus(HttpStatus.CREATED)
-  public CreationResponse<LocationResponse> createLocation(
+  public ResponseEntity<LocationResponse> createLocation(
       @RequestBody LocationCreate locationReq,
       Authentication userAuth) {
-    User creator = userService.findUserFromAuthentication(userAuth);
     Location location = locationService.createLocation(locationReq, userAuth);
-    return new CreationResponse<>(
-        "Successful",
-        "Location Created",
-        String.format("/api/v1/locations/%s", location.getLocationId()),
-        LocationResponse.init(location)
-    );
+    return ResponseEntity.created(URI.create("/api/v1/locations/" + location.getLocationId()))
+        .body(LocationResponse.init(location));
   }
 
   @GetMapping("/{locationId}")
@@ -72,44 +67,29 @@ public class LocationController {
   } // TODO: Test get request
 
   @PutMapping("/{locationId}")
-  public CreationResponse<LocationResponse> updateLocation(
+  public LocationResponse updateLocation(
       @PathVariable Long locationId,
       @RequestBody LocationCreate locationReq
   ) {
     Location location = locationService.getLocationById(locationId);
     location = locationService.putLocation(location, locationReq);
-    return new CreationResponse<>(
-        "Successful",
-        "Location Updated (Put)",
-        String.format("/api/v1/locations/%s", location.getLocationId()),
-        LocationResponse.init(location)
-    ); // TODO: Test put request
+    return LocationResponse.init(location);
   }
 
   @PatchMapping("/{locationId}")
-  public CreationResponse<LocationResponse> patchLocation(
+  public LocationResponse patchLocation(
       @PathVariable Long locationId,
       @RequestBody LocationPatch locationPatch
   ) {
     Location location = locationService.getLocationById(locationId);
     location = locationService.patchLocation(location, locationPatch);
-    return new CreationResponse<>(
-        "Successful",
-        "Location Updated (Patch)",
-        String.format("/api/v1/locations/%s", location.getLocationId()),
-        LocationResponse.init(location)
-    ); // TODO: Test patch request
+    return LocationResponse.init(location);
   }
 
   @DeleteMapping("/{locationId}")
-  public DeletionResponse<LocationResponse> deleteLocation(@PathVariable Long locationId) {
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteLocation(@PathVariable Long locationId) {
     Location location = locationService.getLocationById(locationId);
     locationService.deleteLocation(location);
-    return new DeletionResponse<>(
-        "Success",
-        "Deleted Location",
-        String.format("/api/v1/locations/%d", locationId),
-        LocationResponse.init(location)
-    ); // TODO: Test delete request
   }
 }

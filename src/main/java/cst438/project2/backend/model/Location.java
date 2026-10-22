@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SourceType;
 
 @Entity
 @Table(name = "locations")
@@ -34,11 +35,11 @@ public class Location {
   @ManyToOne(fetch = FetchType.LAZY)
   private User creator;
 
-  @CreationTimestamp
+  @CreationTimestamp(source = SourceType.DB)
   @Column(name = "created_at")
   private LocalDateTime createdAt;
 
-  @UpdateTimestamp
+  @UpdateTimestamp(source = SourceType.DB)
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
 

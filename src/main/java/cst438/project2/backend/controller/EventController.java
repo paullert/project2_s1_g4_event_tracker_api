@@ -7,6 +7,13 @@ import cst438.project2.backend.service.InviteService;
 import cst438.project2.backend.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import java.net.URI;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,14 +30,16 @@ public class EventController {
 
     // TODO: Finish this
     @GetMapping
-    public Page<EventResponse> getEvents(Pageable pageable) {
-        return eventService.getEvents(pageable);
+    public PagedModel<EventResponse> getEvents(
+        @PageableDefault(size = 20, sort = "startsOn", direction = Sort.Direction.DESC) Pageable pageable) {
+        return new PagedModel<>(eventService.getEvents(pageable));
     }
 
     // TODO: Finish this
     @PostMapping
-    public EventResponse createEvent(@RequestBody EventRequest eventRequest) {
-        return eventService.createEvent(eventRequest);
+    public ResponseEntity<EventResponse> createEvent(Authentication auth, @RequestBody EventRequest eventRequest) {
+        EventResponse event = eventService.createEvent(auth, eventRequest);
+        return ResponseEntity.created(URI.create("/api/v1/events/" + event.eventId())).body(event);
     }
 
     // TODO: Finish this
@@ -41,24 +50,27 @@ public class EventController {
 
     // TODO: Finish this
     @PutMapping("/{eventId}")
-    public EventResponse putEvent(@PathVariable Long eventId, @RequestBody EventRequest request) {
-        return eventService.putEvent(eventId, request);
+    public EventResponse putEvent(Authentication auth, @PathVariable Long eventId, @RequestBody EventRequest request) {
+        return eventService.putEvent(auth, eventId, request);
     }
 
     // TODO: Finish this
     @PatchMapping("/{eventId}")
-    public EventResponse patchEvent(@PathVariable Long eventId, @RequestBody EventRequest eventRequest) {
-        return eventService.patchEvent(eventId, eventRequest);
+    public EventResponse patchEvent(Authentication auth, @PathVariable Long eventId, @RequestBody EventRequest eventRequest) {
+        return eventService.patchEvent(auth, eventId, eventRequest);
     }
 
     // TODO: Finish this
     @DeleteMapping("/{eventId}")
-    public void deleteEvent(@PathVariable Long eventId) {
-        eventService.deleteEvent(eventId);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteEvent(Authentication auth, @PathVariable Long eventId) {
+        eventService.deleteEvent(auth, eventId);
     }
 
     @GetMapping("/{eventId}/totalAttendees")
-    public long getEventTotalAttendees(@PathVariable Long eventId) {
-        return inviteService.getAcceptedAttendeeCount(eventId);
+    public long getEventTotalAttendees(@PathVariable Long eventId,
+        @RequestParam(defaultValue = "false") boolean archived) {
+        return archived ? inviteService.getArchivedAttendeeCount(eventId)
+            : inviteService.getAcceptedAttendeeCount(eventId);
     }
 }

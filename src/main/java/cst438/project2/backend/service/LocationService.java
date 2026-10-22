@@ -9,8 +9,10 @@ import cst438.project2.backend.model.User;
 import cst438.project2.backend.repository.LocationRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class LocationService {
@@ -24,12 +26,15 @@ public class LocationService {
     this.userService = userService;
   }
 
+
+  @Transactional(readOnly = true)
   public Location getLocationById(Long locationId) {
     return locationRepository.findById(locationId).orElseThrow(
         () -> new NotFoundException(locationId, "Location")
     );
   }
 
+  @Transactional(readOnly = true)
   public Page<Location> getLocations(Pageable pageable) {
     if (pageable.getPageSize() <= 0) {
       throw new IllegalArgumentException("Size must be greater than 0");
@@ -41,7 +46,12 @@ public class LocationService {
     return locationRepository.findAll(pageable);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
+  @Transactional
   public Location createLocation(LocationCreate locationReq, Authentication userAuth) {
+    if (locationReq.locationName() == null || locationReq.address() == null) {
+      throw new BadRequestException("Missing required fields: locationName, address");
+    }
     User creator = userService.findUserFromAuthentication(userAuth);
     Location location = new Location(
         null,
@@ -55,7 +65,12 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
+  @Transactional
   public Location patchLocation(Location location, LocationPatch reqBody) {
+    if (reqBody.locationName() == null && reqBody.address() == null && reqBody.locationDescription() == null) {
+      throw new BadRequestException("Provide at least one location field to change");
+    }
     if (reqBody.locationName() != null) {
       location.setLocationName(reqBody.locationName());
     }
@@ -69,9 +84,11 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
+  @Transactional
   public Location putLocation(Location location, LocationCreate reqBody) {
-    if (reqBody.locationName() == null || reqBody.address() == null || reqBody.locationDescription() == null) {
-      throw new BadRequestException("Missing 1 or more required fields: locationName, address, locationDescription");
+    if (reqBody.locationName() == null || reqBody.address() == null) {
+      throw new BadRequestException("Missing 1 or more required fields: locationName, address");
     }
     location.setAddress(reqBody.address());
     location.setLocationDescription(reqBody.locationDescription());
@@ -79,6 +96,8 @@ public class LocationService {
     return locationRepository.save(location);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
+  @Transactional
   public void deleteLocation(Location location) {
     locationRepository.delete(location);
   }

@@ -1,13 +1,19 @@
 package cst438.project2.backend.controller;
 
+import cst438.project2.backend.dto.user.RegisterRequest;
+import cst438.project2.backend.dto.user.UserResponse;
 import cst438.project2.backend.model.User;
 import cst438.project2.backend.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
@@ -20,34 +26,22 @@ public class OauthController {
   }
 
   @GetMapping("/me")
-  public AuthenticatedUser getCurrentUser(
-      @AuthenticationPrincipal Jwt jwt,
+  public UserResponse getCurrentUser(
       Authentication authentication
   ) {
-    String role = authentication.getAuthorities()
-        .stream()
-        .map(authority -> authority.getAuthority())
-        .filter(authority -> authority.startsWith("ROLE_"))
-        .findFirst()
-        .orElse(null);
-
-    String subject = jwt.getSubject();
-
-    User user = userService.findUserFromAuthentication(authentication);
-
-    return new AuthenticatedUser(
-        subject,
-        user.getUsername(), //TODO: change to email once database is updated with email field
-        jwt.getClaimAsString("name"),
-        role
-    );
+    return UserResponse.init(userService.findUserFromAuthentication(authentication));
   }
 
-  public record AuthenticatedUser(
-      String googleSubject,
-      String email,
-      String name,
-      String role
+  @PostMapping("/register")
+  public UserResponse register(
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestBody RegisterRequest request
   ) {
+    User user = userService.registerUser(
+        jwt,
+        request.username()
+    );
+
+    return UserResponse.init(user);
   }
 }

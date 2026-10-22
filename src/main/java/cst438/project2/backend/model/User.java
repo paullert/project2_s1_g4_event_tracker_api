@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SourceType;
 import org.hibernate.type.SqlTypes;
 
 @Entity
@@ -26,6 +27,13 @@ public class User {
   @Column(name = "username", nullable = false, unique = true, length = 255)
   private String username;
 
+  @Column(name = "email", nullable = false, unique = true, length = 255)
+  private String email;
+
+  public String getEmail() {
+    return email;
+  }
+
   @Column(name = "google_subject", unique = true, nullable = false, length = 255)
   private String googleSubject;
 
@@ -35,11 +43,11 @@ public class User {
   @Column(name = "role", nullable = false, columnDefinition = "user_role") // columnDefinition passes raw SQL to the database, in this case the enum type
   private UserRole role = UserRole.USER; //    ... = ... means that it has a default value if none is specified
 
-  @CreationTimestamp // Defaults value to current timestamp
+  @CreationTimestamp(source = SourceType.DB)
   @Column(name = "created_at")
   private LocalDateTime createdAt;
 
-  @UpdateTimestamp // On update, sets value to current timestamp
+  @UpdateTimestamp(source = SourceType.DB)
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
 
@@ -102,5 +110,9 @@ public class User {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
   }
 }

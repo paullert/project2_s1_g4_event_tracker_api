@@ -44,6 +44,54 @@ tags:
 
 
 paths:
+  /auth/me:
+    get:
+      tags: [Registered]
+      operationId: getCurrentUser
+      summary: Get the application account for the authenticated Google identity
+      responses:
+        '200':
+          description: The current account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /auth/register:
+    post:
+      tags: [Registered]
+      operationId: registerAccount
+      summary: Register an account using an authenticated Google identity
+      description: The Google ID token must include the email claim. New accounts always have the USER role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  maxLength: 100
+      responses:
+        '200':
+          description: Registered account, or the existing account for this identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /api/v1/events:
     get:
       tags: [Events, Unregistered]
@@ -55,11 +103,11 @@ paths:
         - $ref: '#/components/parameters/Size'
         - name: sort
           in: query
-          description: Field and direction, Spring Pageable style. Default is 'date,asc'
+          description: Field and direction, Spring Pageable style. Default is 'startsOn,desc'
           schema:
             type: string
-            enum: ['eventDate,desc', 'eventDate,asc']
-            default: 'eventDate,desc'
+            enum: ['startsOn,desc', 'startsOn,asc']
+            default: 'startsOn,desc'
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
@@ -200,21 +248,63 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/v1/events/{eventId}/managers/{managerId}:
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: managerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    put:
+      tags: [Events, Admin]
+      operationId: assignEventManager
+      summary: Assign a manager to an event (admin only)
+      description: |
+        Multiple managers may share an event. The assigned user must have the
+        MANAGER role. Repeating an existing assignment leaves it unchanged.
+        Assigned managers can edit or delete the event and manage its invites.
+        A manager who creates a new event is assigned automatically.
+      responses:
+        '204':
+          description: Manager assigned
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Events, Admin]
+      operationId: removeEventManager
+      summary: Remove a manager assignment (admin only)
+      description: Removing an absent assignment also succeeds.
+      responses:
+        '204':
+          description: Manager assignment removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/v1/events/{eventId}/totalAttendees:
     parameters:
       - $ref: '#/components/parameters/EventId'
     get:
       tags: [Unregistered, Registered, Events]
       operationId: getEventTotalAttendees
-      summary: Get the total number of attendees for an event. Results vary depending on whether the event is public or private.
-      security: [] # TODO: Should use token optionally
-      parameters:
-        - name: archived # TODO: possibly remove this, rethink how archived events are accessed
-          in: query
-          description: Whether to search archived events in the count.
-          schema:
-            type: boolean
-            default: false
+      summary: Get the accepted attendee count, or the stored archived count when archived is true.
+      security: []
       responses:
         '500':
           $ref: '#/components/responses/InternalError'
@@ -228,6 +318,11 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/v1/locations:
     get:
       tags: [Locations]
@@ -237,11 +332,11 @@ paths:
       parameters:
         - name: sort
           in: query
-          description: Field and direction, Spring Pageable style. Default is 'updateDate,desc'.
+          description: Field and direction, Spring Pageable style. Default is 'updatedAt,desc'.
           schema:
             type: string
-            enum: [ 'updateDate,desc', 'updateDate,asc' ]
-            default: 'updateDate,desc'
+            enum: [ 'updatedAt,desc', 'updatedAt,asc' ]
+            default: 'updatedAt,desc'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
@@ -259,7 +354,6 @@ paths:
       tags: [Locations, Admin]
       operationId: createLocation
       summary: Create a new location (admin only)
-      security: []
       requestBody:
         required: true
         content:
@@ -309,6 +403,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Location'
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
       tags: [ Locations, Admin ]
       operationId: replaceLocation
@@ -323,11 +419,11 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
         '200':
-          description: The replaced event
+          description: The replaced location
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
+                $ref: '#/components/schemas/Location'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -419,6 +515,42 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Admin]
+      operationId: createUser
+      summary: Create an application account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, subject, role]
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                subject:
+                  type: string
+                role:
+                  $ref: '#/components/schemas/Role'
+      responses:
+        '201':
+          description: The created account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /api/v1/users/{userId}:
     parameters:
@@ -637,7 +769,7 @@ paths:
       tags: [Users, Invites, Registered]
       operationId: getMyInvite
       summary: Get an invitation I've recieved
-      description: The authenticated user may view their own invitation.
+      description: The authenticated user may view their own invitation. No request body is needed.
       responses:
         '200':
           description: The event invite
@@ -690,7 +822,7 @@ paths:
       tags: [ Invites, Manager, Admin ]
       operationId: listEventInvites
       summary: List invites for an event (manager or admin)
-      description: Lists all invitations associated with the event. Requires MANAGER or ADMIN.
+      description: Lists invitations for this event. Requires an assigned MANAGER or ADMIN.
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -815,12 +947,17 @@ components:
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the event's start.
+        locationId:
+          type: integer
+          format: int64
+          description: Internal ID of the event location.
         creatorId:
           type: integer
           format: int64
           example: 7
           description: The user who created the event, refernced by internal DB id.
         updatedAt:
+          readOnly: true
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the last edit to the event.
@@ -828,7 +965,7 @@ components:
     EventCreate:
       description: Body for POST and PUT. PUT replaces every field.
       type: object
-      required: [ eventId, eventName, eventDescription, startsOn, creatorId ] # omits updatedOn, will automatically update value
+      required: [ eventName, eventDescription, startsOn, locationId ] # omits updatedOn, will automatically update value
       properties:
         eventId:
           type: integer
@@ -849,6 +986,10 @@ components:
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the event's start.
+        locationId:
+          type: integer
+          format: int64
+          description: Internal ID of the event location.
         creatorId:
           type: integer
           format: int64
@@ -873,6 +1014,10 @@ components:
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the event's start.
+        locationId:
+          type: integer
+          format: int64
+          description: Internal ID of the event location.
         creatorId:
           type: integer
           format: int64
@@ -884,6 +1029,7 @@ components:
       required: [ locationId, locationName, address, updatedAt ]
       properties:
         locationId:
+          readOnly: true
           type: integer
           format: int64
           example: 7
@@ -891,12 +1037,13 @@ components:
           type: string
           maxLength: 255
         address:
-          type: integer
-          minimum: 1
-          example: 10
+          type: string
+          example: 100 Main Street
         locationDesc:
           type: string
+          nullable: true
         updatedAt:
+          readOnly: true
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           description: The date and time of the last edit to the location.
@@ -907,6 +1054,7 @@ components:
       minProperties: 1
       properties:
         locationId:
+          readOnly: true
           type: integer
           format: int64
           example: 7
@@ -914,9 +1062,8 @@ components:
           type: string
           maxLength: 255
         address:
-          type: integer
-          minimum: 1
-          example: 10
+          type: string
+          example: 100 Main Street
         locationDesc:
           type: string
 
@@ -970,6 +1117,12 @@ components:
       type: object
       required: [ userId, eventId, status, invitedAt ]
       properties:
+        eventName:
+          type: string
+        eventDescription:
+          type: string
+        startsOn:
+          $ref: '#/components/schemas/Date-Time'
         userId:
           type: integer
           format: int64
@@ -982,14 +1135,17 @@ components:
           $ref: '#/components/schemas/InviteStatus'
         message:
           type: string
+          nullable: true
           maxLength: 1000
         invitedAt:
+          readOnly: true
           allOf:
             - $ref: '#/components/schemas/Date-Time'
           description: The date and time of when the invite was sent.
         respondedAt:
-          allOf:
-            - $ref: '#/components/schemas/Date-Time'
+          type: string
+          format: date-time
+          nullable: true
           readOnly: true
           description: The date and time when the invite was accepted or declined.
 
@@ -1016,9 +1172,7 @@ components:
       enum: [ PENDING, ACCEPTED, DECLINED, REVOKED ]
 
     PageMeta:
-      description: >-
-        Spring Data's PagedModel shape. Turn it on with
-        spring.data.web.pageable.serialization-mode=via_dto in application.properties.
+      description: Pagination metadata returned inside each list response's page property.
       type: object
       required: [ size, number, totalElements, totalPages ]
       properties:
@@ -1080,10 +1234,16 @@ components:
         username:
           type: string
           maxLength: 100
-        password:
+        email:
           type: string
-          format: password
-          maxLength: 100
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
         role:
           $ref: '#/components/schemas/Role'
         createdAt:
@@ -1096,6 +1256,7 @@ components:
       enum: [ USER, MANAGER, ADMIN ]
 
     Date-Time:
+      description: RFC 3339 timestamp with an offset. Stored local timestamps use America/Los_Angeles.
       type: string
       format: date-time
       example: 2022-01-01T00:00:00.000Z
@@ -1106,18 +1267,17 @@ components:
       minProperties: 1
       properties:
         userId:
+          readOnly: true
           type: integer
           format: int64
           example: 21
         username:
           type: string
           maxLength: 100
-        password:
+        email:
           type: string
-          format: password
-          maxLength: 100
-        createdAt:
-          $ref: '#/components/schemas/Date-Time'
+        subject:
+          type: string
         role:
           $ref: '#/components/schemas/Role'
 

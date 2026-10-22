@@ -126,7 +126,7 @@ class LocationServiceTest {
     Location result1 = locationService.patchLocation(location, request1);
     assertEquals(updateName1, result1.getLocationName());
     assertEquals(address2, result1.getAddress());
-    assertEquals(this.description2, result1.getLocationDescription());
+    assertEquals(description, result1.getLocationDescription());
 
     Location result2 = locationService.patchLocation(location, request2);
     assertEquals(updateName2, result2.getLocationName());
@@ -155,7 +155,7 @@ class LocationServiceTest {
   @Test
   void incompletePutThrowsBadRequest() {
     // All bad requests should throw BadRequestException with the following message
-    String badReqMsg = constructBadRequestMessage("locationName, address, locationDescription");
+    String badReqMsg = constructBadRequestMessage("locationName, address");
 
     LocationCreate request1 = new LocationCreate(
         null,

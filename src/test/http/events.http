@@ -6,7 +6,7 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/v1/events/{{eventId}}
 Authorization: Bearer {{token}}
 
-### Create an event
+### Create an event (Admin)
 POST {{baseUrl}}/api/v1/events
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -19,7 +19,7 @@ Content-Type: application/json
   "locationId": {{locationId}}
 }
 
-### Replace an event
+### Replace an event (Admin)
 PUT {{baseUrl}}/api/v1/events/{{eventId}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -32,7 +32,7 @@ Content-Type: application/json
   "locationId": {{locationId}}
 }
 
-### Partially update an event
+### Partially update an event (Admin)
 PATCH {{baseUrl}}/api/v1/events/{{eventId}}
 Authorization: Bearer {{token}}
 Content-Type: application/json

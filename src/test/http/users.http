@@ -1,16 +1,61 @@
-### List of user
-GET {{baseUrl}}/api/v1/users
+### Auth Paul
+GET {{baseUrl}}/auth/me
 Authorization: Bearer {{token}}
 
-### List a user's invites
-GET {{baseUrl}}/api/v1/users/{{userId}}/invites
-Authorization: Bearer {{token}}
+<> 2026-10-21T080704.200.json
+<> 2026-10-21T075411.200.json
 
-### Respond to an invite: currently returns 501 until authentication is implemented
-PATCH {{baseUrl}}/api/v1/users/me/invites/{{userId}}
+### Auth New
+# Currently hard to test, move on
+POST {{baseUrl}}/auth/register
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "status": "ACCEPTED"
+  "username": "test",
+  "email": "rand"
 }
+
+### Post User (Admin)
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "places@gmail.com",
+  "role": "USER",
+  "subject": "33213211",
+  "username": "Guy"
+}
+
+
+### Get Users (Admin)
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+### Get User (Admin)
+GET {{baseUrl}}/users/0
+Authorization: Bearer {{token}}
+
+
+### Patch User (Admin)
+PATCH {{baseUrl}}/users/0
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+
+{
+  "username": "test",
+  "email": "rand",
+  "role": "USER",
+  "subject": "111111"
+}
+
+### Delete User (Admin)
+DELETE {{baseUrl}}/users/11
+Authorization: Bearer {{token}}
+
+### Delete Me (Authenticated)
+DELETE {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+

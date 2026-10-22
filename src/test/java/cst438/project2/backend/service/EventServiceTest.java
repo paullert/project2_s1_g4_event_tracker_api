@@ -13,14 +13,17 @@ import static cst438.project2.backend.TestResources.UserValues.*;
 import static cst438.project2.backend.TestResources.LocationValues.*;
 import static cst438.project2.backend.TestResources.ErrorValues.*;
 
+import cst438.project2.backend.dto.ApiDates;
 import cst438.project2.backend.dto.event.EventRequest;
 import cst438.project2.backend.dto.event.EventResponse;
 import cst438.project2.backend.exceptions.BadRequestException;
-import cst438.project2.backend.exceptions.NotFoundException;
 import cst438.project2.backend.model.Event;
 import cst438.project2.backend.model.Location;
 import cst438.project2.backend.model.User;
 import cst438.project2.backend.repository.EventRepository;
+import cst438.project2.backend.repository.InviteRepository;
+import cst438.project2.backend.repository.ManagerEventRepository;
+import org.springframework.security.core.Authentication;
 import cst438.project2.backend.security.SecurityConfig;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +35,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 @Import(SecurityConfig.class)
@@ -42,6 +47,11 @@ class EventServiceTest {
 
   @Mock
   private UserService userService;
+
+  @Mock private Authentication authentication;
+  @Mock private EventOwnershipService ownership;
+  @Mock private ManagerEventRepository managerEvents;
+  @Mock private InviteRepository invites;
 
   @InjectMocks
   private EventService eventService;
@@ -112,11 +122,11 @@ class EventServiceTest {
     when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
     when(eventRepository.save(event)).thenReturn(event);
 
-    EventResponse result = eventService.putEvent(eventId, request);
+    EventResponse result = eventService.putEvent(authentication, eventId, request);
 
     assertEquals(name, result.eventName());
     assertEquals(description, result.eventDescription());
-    assertEquals(newStartTime.format(formatter), result.startsOn());
+    assertEquals(ApiDates.format(newStartTime), result.startsOn());
     assertEquals(newCreatorId, result.creatorId());
     assertEquals(newLocationId, result.locationId());
 
@@ -162,24 +172,24 @@ class EventServiceTest {
     when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
     when(eventRepository.save(event)).thenReturn(event);
 
-    EventResponse result1 = eventService.patchEvent(eventId, request1);
+    EventResponse result1 = eventService.patchEvent(authentication, eventId, request1);
     assertEquals(name1, result1.eventName());
     assertEquals(description1, result1.eventDescription());
-    assertEquals(eventStartTime.format(formatter), result1.startsOn());
+    assertEquals(ApiDates.format(eventStartTime), result1.startsOn());
     assertEquals(creatorId, result1.creatorId());
     assertEquals(locationId, result1.locationId());
 
-    EventResponse result2 = eventService.patchEvent(eventId, request2);
+    EventResponse result2 = eventService.patchEvent(authentication, eventId, request2);
     assertEquals(name2, result2.eventName());
     assertEquals(description1, result2.eventDescription());
-    assertEquals(newStartTime.format(formatter), result2.startsOn());
+    assertEquals(ApiDates.format(newStartTime), result2.startsOn());
     assertEquals(creatorId, result2.creatorId());
     assertEquals(locationId, result2.locationId());
 
-    EventResponse result3 = eventService.patchEvent(eventId, request3);
+    EventResponse result3 = eventService.patchEvent(authentication, eventId, request3);
     assertEquals(name2, result3.eventName());
     assertEquals(description2, result3.eventDescription());
-    assertEquals(newStartTime.format(formatter), result3.startsOn());
+    assertEquals(ApiDates.format(newStartTime), result3.startsOn());
     assertEquals(newCreatorId, result3.creatorId());
     assertEquals(newLocationId, result3.locationId());
 
@@ -188,16 +198,15 @@ class EventServiceTest {
 
   @Test
   void missingEventThrowsNotFound() {
-    String notFoundMsg = constructNotFoundMessage("Event", "id "+ INVALID_REQUEST_ID);
     when(eventRepository.findById(INVALID_REQUEST_ID))
         .thenReturn(Optional.empty());
 
-    NotFoundException ex = assertThrows(
-        NotFoundException.class,
+    ResponseStatusException ex = assertThrows(
+        ResponseStatusException.class,
         () -> eventService.getEvent(INVALID_REQUEST_ID)
     );
 
-    assertEquals(notFoundMsg, ex.getMessage());
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     verify(eventRepository, never()).save(any());
   }
 
@@ -232,19 +241,19 @@ class EventServiceTest {
 
     BadRequestException ex1 = assertThrows(
         BadRequestException.class,
-        () -> eventService.putEvent(eventId, request1)
+        () -> eventService.putEvent(authentication, eventId, request1)
     );
     assertEquals(badReqMsg, ex1.getMessage());
 
     BadRequestException ex2 = assertThrows(
         BadRequestException.class,
-        () -> eventService.putEvent(eventId, request2)
+        () -> eventService.putEvent(authentication, eventId, request2)
     );
     assertEquals(badReqMsg, ex2.getMessage());
 
     BadRequestException ex3 = assertThrows(
         BadRequestException.class,
-        () -> eventService.putEvent(eventId, request3)
+        () -> eventService.putEvent(authentication, eventId, request3)
     );
     assertEquals(badReqMsg, ex3.getMessage());
 

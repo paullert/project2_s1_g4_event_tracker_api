@@ -1,7 +1,7 @@
 package cst438.project2.backend.dto.event;
 
 import cst438.project2.backend.model.Event;
-import java.time.format.DateTimeFormatter;
+import cst438.project2.backend.dto.ApiDates;
 
 public record EventResponse(
         Long eventId,
@@ -9,7 +9,8 @@ public record EventResponse(
         String eventDescription,
         String startsOn,
         Long creatorId,
-        Long locationId
+        Long locationId,
+        String updatedAt
         ) {
 
     public static EventResponse init(Event event) {
@@ -17,10 +18,10 @@ public record EventResponse(
                 event.getId(),
                 event.getEventName(),
                 event.getEventDescription(),
-                event.getStartsOn()
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),  // Desired format, was ISO format
+                ApiDates.format(event.getStartsOn()),
                 event.getCreatorId(),
-                event.getLocationId()
+                event.getLocationId(),
+                ApiDates.format(event.getUpdatedAt() != null ? event.getUpdatedAt() : event.getCreatedAt())
         );
     }
 }

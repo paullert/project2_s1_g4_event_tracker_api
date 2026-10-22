@@ -1,0 +1,75 @@
+### Get Event Invites (Manager w/o Access)
+GET {{baseUrl}}/api/v1/invites/events/1
+Authorization: Bearer {{token}}
+
+### Post an Invite (Manager w/o Access)
+POST {{baseUrl}}/api/v1/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "PENDING",
+  "userId": 5,
+  "message": "Editted Msg",
+  "eventId": 1
+}
+
+### Put an Invite (Manager w/o Access)
+PUT {{baseUrl}}/api/v1/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ACCEPTED",
+  "userId": 10,
+  "message": "Editted Msg",
+  "eventId": 1
+}
+
+### Delete an Invite (Manager w/o Access)
+DELETE {{baseUrl}}/api/v1/invites/users/10/events/1
+Authorization: Bearer {{token}}
+
+### Check caller before assigning managers (must return role ADMIN)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Add Manager to Event (caller must be ADMIN; user 10 must be MANAGER)
+PUT {{baseUrl}}/api/v1/events/1/managers/10
+Authorization: Bearer {{token}}
+
+### Get Event Invites (Manager w/ Access)
+GET {{baseUrl}}/api/v1/invites/events/2
+Authorization: Bearer {{token}}
+
+### Post an Invite (Manager w/ Access)
+POST {{baseUrl}}/api/v1/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "PENDING",
+  "userId": 5,
+  "message": "Really big Msg",
+  "eventId": 2
+}
+
+### Put an Invite (Manager w/ Access)
+PUT {{baseUrl}}/api/v1/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ACCEPTED",
+  "userId": 5,
+  "message": "Back to normal",
+  "eventId": 2
+}
+
+### Delete an Invite (manager gets 403; OpenAPI permits admins only)
+DELETE {{baseUrl}}/api/v1/invites/users/5/events/2
+Authorization: Bearer {{token}}
+
+
+
+

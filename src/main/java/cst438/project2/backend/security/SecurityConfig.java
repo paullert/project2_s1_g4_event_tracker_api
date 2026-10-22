@@ -7,6 +7,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import cst438.project2.backend.exceptions.ApiProblem;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableMethodSecurity
@@ -15,8 +21,17 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(
       HttpSecurity http,
-      JwtAuthConverter jwtAuthConv
+      JwtAuthConverter jwtAuthConv,
+      ObjectMapper mapper
   ) throws Exception {
+
+    AuthenticationEntryPoint unauthenticated = (request, response, ex) -> {
+      response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+      ApiProblem.write(HttpStatus.UNAUTHORIZED, "A valid bearer token is required", request, response, mapper);
+    };
+    AccessDeniedHandler forbidden = (request, response, ex) ->
+        ApiProblem.write(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation",
+            request, response, mapper);
 
     http
         .csrf(csrf -> csrf.disable())
@@ -25,6 +40,8 @@ public class SecurityConfig {
                 SessionCreationPolicy.STATELESS
             )
         )
+        .exceptionHandling(errors -> errors.authenticationEntryPoint(unauthenticated)
+            .accessDeniedHandler(forbidden))
         .authorizeHttpRequests(auth -> auth
             // Put Public routes here, the permit all allows them to be accessed without authentication
             .requestMatchers(
@@ -41,7 +58,7 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         .oauth2ResourceServer(oauth ->
-            oauth.jwt(jwt ->
+            oauth.authenticationEntryPoint(unauthenticated).accessDeniedHandler(forbidden).jwt(jwt ->
                 jwt.jwtAuthenticationConverter(
                     jwtAuthConv
                 )

@@ -164,7 +164,7 @@ class InviteServiceTest {
 
   @Test
   void createInviteDefaultsStatusToPending() {
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(user);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
     when(inviteRepository.save(any(Invite.class))).thenAnswer(invocation -> invocation.getArgument(0));
     InviteResponse result = inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, "Welcome"));
@@ -175,11 +175,11 @@ class InviteServiceTest {
 
   @Test
   void createInviteReturnsNotFoundForMissingUserOrEvent() {
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(null);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
     ResponseStatusException missingUser = assertThrows(ResponseStatusException.class,
         () -> inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, null)));
     assertEquals(HttpStatus.NOT_FOUND, missingUser.getStatusCode());
-    when(userRepository.findById(USER_ID).orElse(null)).thenReturn(user);
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
     when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.empty());
     ResponseStatusException missingEvent = assertThrows(ResponseStatusException.class,
         () -> inviteService.createInvite(new InviteRequest(USER_ID, EVENT_ID, null, null)));

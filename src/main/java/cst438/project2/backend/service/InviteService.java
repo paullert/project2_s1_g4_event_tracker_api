@@ -148,6 +148,7 @@ public class InviteService {
     return InviteResponse.init(invite);
   }
 
+  @Transactional
   public InviteResponse respondToMyInvite(Authentication auth, Long eventId,
       MyInviteRequest request) {
     User user = userService.findUserFromAuthentication(auth); // TODO: look into other solutions

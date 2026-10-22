@@ -2,13 +2,11 @@ package cst438.project2.backend.controller;
 
 import cst438.project2.backend.dto.invite.MyInviteRequest;
 import cst438.project2.backend.service.UserService;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 import cst438.project2.backend.dto.invite.InviteResponse;
 import cst438.project2.backend.dto.invite.InviteRequest;
@@ -103,40 +101,26 @@ public class InviteController {
         return null;
     }
 
-    //TODO: Finish
-    // TODO: Make user role only
     @GetMapping("me")
-    public Page<InviteResponse> getMyInvites() {
-        throw new ResponseStatusException(
-                HttpStatus.NOT_IMPLEMENTED,
-                "Not implemented yet"
-        );
+    public Page<InviteResponse> getMyInvites(Authentication auth, Pageable pageable) {
+        return inviteService.getMyInvites(auth,pageable);
     }
 
-    //TODO: Finish
-    // make user role only
-    @GetMapping("me/{inviteId}")
+    @GetMapping("me/{eventId}")
     public InviteResponse getMyInvite(
-            @PathVariable Long inviteId,
-            @RequestBody(required = false) Object request
+            @PathVariable Long eventId,
+            Authentication auth
     ) {
-        throw new ResponseStatusException(
-                HttpStatus.NOT_IMPLEMENTED,
-                "Authentication is not implemented yet"
-        );
+       return inviteService.getMyInvite(auth,eventId);
     }
 
 
-    //TODO: Finish
-    // make user role only
-    @PutMapping("me/{inviteId}")
+    @PutMapping("me/{eventId}")
     public InviteResponse respondToMyInvite(
-            @PathVariable Long inviteId,
-            @RequestBody MyInviteRequest request
+            @PathVariable Long eventId,
+            @RequestBody MyInviteRequest request,
+            Authentication auth
     ) {
-        throw new ResponseStatusException(
-                HttpStatus.NOT_IMPLEMENTED,
-                "Authentication is not implemented yet"
-        );
+        return inviteService.respondToMyInvite(auth, eventId, request);
     }
 }

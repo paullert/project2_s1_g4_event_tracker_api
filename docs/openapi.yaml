@@ -638,12 +638,6 @@ paths:
       operationId: getMyInvite
       summary: Get an invitation I've recieved
       description: The authenticated user may view their own invitation.
-      requestBody: 
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Invite'
       responses:
         '200':
           description: The event invite

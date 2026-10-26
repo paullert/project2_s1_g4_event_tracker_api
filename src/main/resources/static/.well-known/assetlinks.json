@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.event_tracker",
+      "sha256_cert_fingerprints": [
+        "4C:5C:8C:B4:75:E9:11:F3:D7:5C:9E:82:ED:4A:18:88:A0:08:42:4C:A5:0A:D2:C6:AF:E5:50:3F:4D:87:F1:85"
+      ]
+    }
+  }
+]

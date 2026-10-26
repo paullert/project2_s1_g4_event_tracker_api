@@ -54,7 +54,6 @@ public class SecurityConfig {
                 "/api/v1",
                 "/api/v1/index.html"
             ).permitAll()
-            .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
             // .authenticated = needs auth
             .requestMatchers("/auth/me").authenticated()
             // this makes all requests require auth, except those stated in .permitAll

@@ -43,6 +43,10 @@ public class SecurityConfig {
         .exceptionHandling(errors -> errors.authenticationEntryPoint(unauthenticated)
             .accessDeniedHandler(forbidden))
         .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        HttpMethod.POST,
+                        "/auth/google/exchange"
+                ).permitAll()
             // Put Public routes here, the permit all allows them to be accessed without authentication
             .requestMatchers(
                 HttpMethod.GET,
@@ -51,7 +55,10 @@ public class SecurityConfig {
                 "/static/api/v1/events/{eventId}/totalAttendees",
                 "/static/api/v1/locations",
                 "/static/api/v1/locations/*",
-                "/static/api/v1"
+                "/static/api/v1",
+                    "/oauth2/start",
+                    "/oauth2redirect",
+                    "/auth/app-callback"
             ).permitAll()
             // .authenticated = needs auth
             .requestMatchers("/auth/me").authenticated()

@@ -4,6 +4,7 @@ server:
 google:
   oauth2:
     client-id: ${GOOGLE_CLIENT_ID}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:com.example.event_tracker://oauth2redirect}
 app:
   pagination:
     default-page-size: 20

@@ -47,6 +47,10 @@ public class SecurityConfig {
         .exceptionHandling(errors -> errors.authenticationEntryPoint(unauthenticated)
             .accessDeniedHandler(forbidden))
         .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        HttpMethod.POST,
+                        "/auth/google/exchange"
+                ).permitAll()
             // Put Public routes here, the permit all allows them to be accessed without authentication
             .requestMatchers(
                 HttpMethod.GET,

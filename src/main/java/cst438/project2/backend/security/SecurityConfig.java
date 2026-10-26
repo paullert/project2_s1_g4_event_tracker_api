@@ -46,13 +46,15 @@ public class SecurityConfig {
             // Put Public routes here, the permit all allows them to be accessed without authentication
             .requestMatchers(
                 HttpMethod.GET,
-                "/static/api/v1/events",
-                "/static/api/v1/events/*",
-                "/static/api/v1/events/{eventId}/totalAttendees",
-                "/static/api/v1/locations",
-                "/static/api/v1/locations/*",
-                "/static/api/v1"
+                "/api/v1/events",
+                "/api/v1/events/*",
+                "/api/v1/events/{eventId}/totalAttendees",
+                "/api/v1/locations",
+                "/api/v1/locations/*",
+                "/api/v1",
+                "/api/v1/index.html"
             ).permitAll()
+            .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
             // .authenticated = needs auth
             .requestMatchers("/auth/me").authenticated()
             // this makes all requests require auth, except those stated in .permitAll

@@ -26,37 +26,44 @@ public class GoogleConfig {
                 "https://www.googleapis.com/oauth2/v3/certs"
             ).build();
 
+        decoder.setJwtValidator(tokenValidator(clientId));
+        return decoder;
+    }
+
+    static OAuth2TokenValidator<Jwt> tokenValidator(String clientId) {
+        if (clientId == null || clientId.isBlank()) {
+            throw new IllegalArgumentException("google.oauth2.client-id must identify the Android OAuth client");
+        }
         OAuth2TokenValidator<Jwt> claims = jwt -> {
           String issuer = jwt.getClaimAsString("iss");
           String subject = jwt.getSubject();
 
           // Check if the token is issued by Google
-          boolean isGoogle = issuer.equals("https://accounts.google.com") || issuer.equals("accounts.google.com");
+          boolean isGoogle = "https://accounts.google.com".equals(issuer)
+              || "accounts.google.com".equals(issuer);
 
           // Check if the token is intended for the client
           List<String> audiences = jwt.getAudience();
           boolean validAudience = audiences != null && audiences.contains(clientId);
+          String authorizedParty = jwt.getClaimAsString("azp");
+          boolean validAuthorizedParty = clientId.equals(authorizedParty)
+              || (authorizedParty == null && audiences != null && audiences.size() == 1);
 
           // Check if the token has a valid subject (user ID)
           boolean validSubject = subject != null && !subject.isBlank();
 
           // If above conditions are met, and the token has an expiration time, the token is valid
-          if (isGoogle && validAudience && validSubject && jwt.getExpiresAt() != null) {
+          if (isGoogle && validAudience && validAuthorizedParty && validSubject
+              && jwt.getExpiresAt() != null) {
             return OAuth2TokenValidatorResult.success();
           }
           // If one or more condition's fail, the token is invalid
           return OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "Invalid Google token", null));
         };
 
-        // Add the custom validator to the decoder
-        decoder.setJwtValidator(
-            // Combine the default JWT validator with the custom validator
-            new DelegatingOAuth2TokenValidator<>(
+        return new DelegatingOAuth2TokenValidator<>(
                 JwtValidators.createDefault(),
                 claims
-            )
         );
-
-        return decoder;
     }
 }

@@ -35,6 +35,10 @@ public class SecurityConfig {
 
     http
         .csrf(csrf -> csrf.disable())
+        .formLogin(form -> form.disable())
+        .httpBasic(basic -> basic.disable())
+        .logout(logout -> logout.disable())
+        .requestCache(cache -> cache.disable())
         .sessionManagement(session ->
             session.sessionCreationPolicy(
                 SessionCreationPolicy.STATELESS
@@ -53,8 +57,7 @@ public class SecurityConfig {
                 "/api/v1/locations/*",
                 "/api/v1",
                 "/api/v1/index.html",
-                "/.well-known/assetlinks.json",
-                "/oauth2redirect"
+                "/.well-known/assetlinks.json"
             ).permitAll()
             // .authenticated = needs auth
             .requestMatchers("/auth/me").authenticated()

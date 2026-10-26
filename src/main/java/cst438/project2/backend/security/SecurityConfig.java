@@ -52,7 +52,9 @@ public class SecurityConfig {
                 "/api/v1/locations",
                 "/api/v1/locations/*",
                 "/api/v1",
-                "/api/v1/index.html"
+                "/api/v1/index.html",
+                "/.well-known/assetlinks.json",
+                "/oauth2redirect"
             ).permitAll()
             // .authenticated = needs auth
             .requestMatchers("/auth/me").authenticated()

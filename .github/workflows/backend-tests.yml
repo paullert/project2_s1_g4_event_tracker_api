@@ -1,0 +1,31 @@
+name: Backend tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Spring Boot tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run backend tests
+        env:
+          GOOGLE_CLIENT_ID: test-client.apps.googleusercontent.com
+          DB_URL: jdbc:postgresql://localhost:5432/event_tracker
+          DB_USER: event_tracker
+          DB_PASSWORD: event_tracker_ci
+        run: ./gradlew test

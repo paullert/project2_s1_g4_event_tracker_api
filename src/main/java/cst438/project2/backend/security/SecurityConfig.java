@@ -35,6 +35,10 @@ public class SecurityConfig {
 
     http
         .csrf(csrf -> csrf.disable())
+        .formLogin(form -> form.disable())
+        .httpBasic(basic -> basic.disable())
+        .logout(logout -> logout.disable())
+        .requestCache(cache -> cache.disable())
         .sessionManagement(session ->
             session.sessionCreationPolicy(
                 SessionCreationPolicy.STATELESS
@@ -50,15 +54,14 @@ public class SecurityConfig {
             // Put Public routes here, the permit all allows them to be accessed without authentication
             .requestMatchers(
                 HttpMethod.GET,
-                "/static/api/v1/events",
-                "/static/api/v1/events/*",
-                "/static/api/v1/events/{eventId}/totalAttendees",
-                "/static/api/v1/locations",
-                "/static/api/v1/locations/*",
-                "/static/api/v1",
-                    "/oauth2/start",
-                    "/oauth2redirect",
-                    "/auth/app-callback"
+                "/api/v1/events",
+                "/api/v1/events/*",
+                "/api/v1/events/{eventId}/totalAttendees",
+                "/api/v1/locations",
+                "/api/v1/locations/*",
+                "/api/v1",
+                "/api/v1/index.html",
+                "/.well-known/assetlinks.json"
             ).permitAll()
             // .authenticated = needs auth
             .requestMatchers("/auth/me").authenticated()

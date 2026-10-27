@@ -1,69 +1,83 @@
-# CST 438 Project 02: API Template
+# Event Tracker API
 
-Starter repo for Project 02. **One person per team** clicks **Use this template → Create a new
-repository**, names it after your API, and adds teammates as collaborators.
+REST API for events, locations, invitations, and attendance, with database-backed
+user, manager, and administrator permissions.
 
-> Replace this README with your own in Sprint 4. The prompt lists what it must contain.
+**Team:** Paul Conner, Sarah Wafa, Ann Jojo, and Billy Provins.
 
-## What's in here
+**Tech stack:** Java 17, Spring Boot 4.1, Spring Security OAuth2 Resource Server,
+Spring Data JPA, PostgreSQL 16, Gradle, Docker, JUnit, and Testcontainers.
 
-| Path | What it is | When |
-|---|---|---|
-| `docs/proposal.md` | Proposal template: pitch, resources, ER sketch, endpoints, choices, risks | **Thu 10/1** |
-| `docs/openapi.yaml` | A complete example contract (workout tracker). Replace it with your API. | Sprint 1 |
-| `redocly.yaml` | Lint rules for the contract | Sprint 1 |
-| `.github/ISSUE_TEMPLATE/user_story.md` | Every new issue starts as a user story with acceptance criteria | now |
-| `.github/pull_request_template.md` | Every PR starts with `Closes #` and a test checklist | now |
-| `.gitignore` | Gradle, Android, IntelliJ, Node, and **secrets** (`.env`, keystores, `local.properties`) | now |
+- [Live API](https://project2-s1-g4-event-tracker-api.onrender.com/) Note: this project is hosted on Render.com, which may take a few seconds to load. It also might be no longer available if reading this in the future.
+- [Live API documentation](https://project2-s1-g4-event-tracker-api.onrender.com/api/v1) This can also be accessed wherever api is hosted at {BASE_URL}/api/vi
+- [Android app](https://github.com/paullert/project2_s1_g4_event_tracker_android)
+- [openapi.yaml](docs/openapi.yaml)
 
-Where your code goes is up to you: an `api/` and an `android/` folder in this repo (monorepo),
-or a second repo for the Android app. Write it down in an ADR.
+## Local setup
 
-## First 15 minutes
+Install Git and Docker Desktop. Java 17 is needed only to run Gradle on the host.
+These commands use PowerShell; macOS/Linux users can use `./gradlew` instead.
 
-- [ ] Add teammates: **Settings → Collaborators**
-- [ ] Protect `main`: **Settings → Rules → Rulesets → New branch ruleset**. Target the default branch,
-      require a PR with **2 approvals** (1 for a team of 3), block force pushes. Enforcement: **Active**.
-- [ ] Create milestones `Sprint 1` through `Sprint 4`: **Issues → Milestones**
-- [ ] Create a Project board (Kanban) and link it: **Projects tab → Link a project**
-- [ ] Start `docs/proposal.md` on a branch:
+1. Clone the repository:
 
-```bash
-git switch -c docs/proposal
-# edit docs/proposal.md
-git add docs/proposal.md
-git commit -m "Draft proposal"
-git push -u origin docs/proposal
-gh pr create --fill
-```
+   ```powershell
+   git clone https://github.com/paullert/project2_s1_g4_event_tracker_api.git
+   cd project2_s1_g4_event_tracker_api
+   ```
 
-## Working with the contract
+2. Start a local PostgreSQL database:
 
-No installs needed beyond Node (`npx` runs the tools).
+   ```powershell
+   docker network create event-tracker
+   docker run -d --name event-tracker-db --network event-tracker -p 5432:5432 -e POSTGRES_DB=event_tracker -e POSTGRES_USER=event_tracker -e POSTGRES_PASSWORD=event_tracker_dev -v event-tracker-data:/var/lib/postgresql/data postgres:16
+   docker exec event-tracker-db pg_isready -U event_tracker -d event_tracker
+   ```
 
-```bash
-# Lint: fix every error before you open a PR
-npx @redocly/cli lint docs/openapi.yaml
+   Wait until the last command reports that connections are accepted. Initialize
+   this **new local database only**; the schema script recreates its tables:
 
-# Mock server: a fake API built from the contract, at http://127.0.0.1:4010
-npx @stoplight/prism-cli mock docs/openapi.yaml
+   ```powershell
+   docker cp docs/sql event-tracker-db:/tmp/sql
+   docker exec event-tracker-db psql -U event_tracker -d event_tracker -v ON_ERROR_STOP=1 -f /tmp/sql/database.sql -f /tmp/sql/add_revoked_invite_status.sql -f /tmp/sql/backfill_manager_ownership.sql
+   ```
 
-curl -H "Authorization: Bearer x" "http://127.0.0.1:4010/api/v1/workouts?page=0&size=20"
-curl -i http://127.0.0.1:4010/api/v1/workouts          # 401: no token
-curl -H "Authorization: Bearer x" -H "Prefer: code=404" \
-     http://127.0.0.1:4010/api/v1/workouts/42          # force an error response
-```
+3. Create an ignored `.env` file in the repository root:
 
-The mock **validates** your requests and returns the `example:` values from the contract.
-**Nothing is saved**: a POST followed by a GET returns the example, not what you posted. The
-Android emulator reaches it at `http://10.0.2.2:4010`.
+   ```properties
+   DB_URL=jdbc:postgresql://event-tracker-db:5432/event_tracker
+   DB_USER=event_tracker
+   DB_PASSWORD=event_tracker_dev
+   GOOGLE_CLIENT_ID=YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com
+   PORT=8080
+   ```
 
-To see the contract rendered, paste `docs/openapi.yaml` into https://editor.swagger.io.
+   Use the same Android OAuth client ID as the app's `gradle.properties`.
+   The app performs PKCE sign-in; the API validates Google ID tokens from the
+   `Authorization: Bearer` header. No Google client secret or password login is used.
 
-## Links
+4. Build and start the API:
 
-- Project 02 prompt and rubric: Canvas → Project 02 module
-- OpenAPI 3.0 spec: https://spec.openapis.org/oas/v3.0.3
-- Prism: https://docs.stoplight.io/docs/prism
-- Mermaid ER diagrams: https://mermaid.js.org/syntax/entityRelationshipDiagram.html
-- RFC 9457 Problem Details: https://www.rfc-editor.org/rfc/rfc9457
+   ```powershell
+   docker build -t event-tracker-api .
+   docker run -d --name event-tracker-api --network event-tracker --env-file .env -e PORT=8080 -p 8080:8080 event-tracker-api
+   docker logs -f event-tracker-api
+   ```
+
+5. Open [local API docs](http://localhost:8080/api/v1) or request
+   [events](http://localhost:8080/api/v1/events). Android emulators use
+   `http://10.0.2.2:8080/`. New Google accounts receive `USER`; assign the first
+   real administrator through the database. Protected routes return 401 without
+   a valid token and 403 when a role/ownership check fails.
+
+To run the API on the host instead, change the `.env` database hostname to
+`localhost` and run `.\gradlew.bat bootRun`. Run `.\gradlew.bat test` with Docker
+running for Testcontainers. The Docker image build skips tests.
+
+Stop with `docker stop event-tracker-api event-tracker-db`; restart existing
+containers with `docker start event-tracker-db event-tracker-api`.
+
+## Further documentation
+
+- [Authentication configuration](docs/authentication.md)
+- [OpenAPI contract](docs/openapi.yaml)
+- [Database schema](docs/sql/database.sql)
